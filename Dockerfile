@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --timeout=300 --retries=5 -r requirements.txt
 
-RUN python -m spacy download ru_core_news_sm --timeout=300
+RUN python -m spacy download ru_core_news_lg --timeout=300
 
 COPY . .
 

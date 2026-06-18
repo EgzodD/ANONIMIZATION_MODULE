@@ -31,7 +31,7 @@ def _build_analyzer() -> AnalyzerEngine:
     nlp_config = {
         "nlp_engine_name": "spacy",
         "models": [
-            {"lang_code": "ru", "model_name": "ru_core_news_sm"},
+            {"lang_code": "ru", "model_name": "ru_core_news_lg"},
         ],
     }
     nlp_engine = NlpEngineProvider(nlp_configuration=nlp_config).create_engine()
@@ -84,10 +84,12 @@ def anonymize_text(text: str) -> dict:
     )
 
     mapping = {}
-    for item in anonymized.items:
-        original_value = text[item.start : item.end]
-        if item.entity_type not in EXCLUDED_ENTITIES:
-            mapping[item.text] = original_value
+    for result in results:
+        if result.entity_type not in EXCLUDED_ENTITIES:
+            original_value = text[result.start : result.end]
+            op = OPERATORS.get(result.entity_type, OPERATORS["DEFAULT"])
+            placeholder = op.params.get("new_value", f"<{result.entity_type}>")
+            mapping[placeholder] = original_value
 
     entities_found = [
         {

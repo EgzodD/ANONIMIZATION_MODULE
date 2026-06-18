@@ -5,6 +5,7 @@
 """
 
 from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy import text as sql_text
 from sqlalchemy.orm import Session
 
 from app.database import get_db, Conversation, Message, Contact
@@ -192,13 +193,21 @@ def _anonymize_conversation(conv: Conversation, db: Session) -> ConversationResp
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
-def health_check():
-    """Проверка состояния сервиса и списка поддерживаемых типов сущностей."""
+def health_check(db: Session = Depends(get_db)):
+    """Проверка состояния сервиса, подключения к БД и списка поддерживаемых типов сущностей."""
+    db_ok = False
+    try:
+        db.execute(sql_text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        pass
+
     supported = analyzer_engine.get_supported_entities(language="ru")
     filtered = [e for e in supported if e not in EXCLUDED_ENTITIES]
     return HealthResponse(
-        status="ok",
+        status="ok" if db_ok else "degraded",
         analyzer_ready=True,
+        db_connected=db_ok,
         supported_entities=sorted(filtered),
     )
 

@@ -24,43 +24,81 @@ ru_phone_recognizer = PatternRecognizer(
     ],
 )
 
-ru_inn_recognizer = PatternRecognizer(
-    supported_entity="INN",
-    supported_language="ru",
-    name="RuInnRecognizer",
-    patterns=[
-        Pattern(
-            name="inn_12",
-            regex=r"\b\d{12}\b",
-            score=0.5,
-        ),
-        Pattern(
-            name="inn_10",
-            regex=r"\b\d{10}\b",
-            score=0.4,
-        ),
-    ],
-    context=["инн", "ИНН", "инн:", "ИНН:", "идентификационный номер"],
-)
 
-ru_snils_recognizer = PatternRecognizer(
-    supported_entity="SNILS",
-    supported_language="ru",
-    name="RuSnilsRecognizer",
-    patterns=[
-        Pattern(
-            name="snils_dashes",
-            regex=r"\b\d{3}-\d{3}-\d{3}\s?\d{2}\b",
-            score=0.85,
-        ),
-        Pattern(
-            name="snils_spaces",
-            regex=r"\b\d{3}\s\d{3}\s\d{3}\s?\d{2}\b",
-            score=0.8,
-        ),
-    ],
-    context=["снилс", "СНИЛС", "страховое свидетельство"],
-)
+def _validate_inn(inn_str: str) -> bool:
+    digits = [int(c) for c in inn_str if c.isdigit()]
+    if len(digits) == 10:
+        weights = [2, 4, 10, 3, 5, 9, 4, 6, 8]
+        control = sum(w * d for w, d in zip(weights, digits)) % 11 % 10
+        return control == digits[9]
+    if len(digits) == 12:
+        w1 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+        w2 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+        c1 = sum(w * d for w, d in zip(w1, digits)) % 11 % 10
+        c2 = sum(w * d for w, d in zip(w2, digits)) % 11 % 10
+        return c1 == digits[10] and c2 == digits[11]
+    return False
+
+
+class RuInnRecognizer(PatternRecognizer):
+    def __init__(self):
+        super().__init__(
+            supported_entity="INN",
+            supported_language="ru",
+            name="RuInnRecognizer",
+            patterns=[
+                Pattern(name="inn_12", regex=r"\b\d{12}\b", score=0.5),
+                Pattern(name="inn_10", regex=r"\b\d{10}\b", score=0.4),
+            ],
+            context=[
+                "инн", "ИНН", "инн:", "ИНН:",
+                "идентификационный номер", "налоговый номер",
+                "ИНН физ", "ИНН юр",
+            ],
+        )
+
+    def validate_result(self, pattern_text: str):
+        return _validate_inn(pattern_text)
+
+
+ru_inn_recognizer = RuInnRecognizer()
+
+
+def _validate_snils(snils_str: str) -> bool:
+    digits = [int(c) for c in snils_str if c.isdigit()]
+    if len(digits) != 11:
+        return False
+    weights = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    total = sum(w * d for w, d in zip(weights, digits[:9]))
+    if total < 100:
+        control = total
+    elif total in (100, 101):
+        control = 0
+    else:
+        control = total % 101
+        if control in (100, 101):
+            control = 0
+    return control == digits[9] * 10 + digits[10]
+
+
+class RuSnilsRecognizer(PatternRecognizer):
+    def __init__(self):
+        super().__init__(
+            supported_entity="SNILS",
+            supported_language="ru",
+            name="RuSnilsRecognizer",
+            patterns=[
+                Pattern(name="snils_dashes", regex=r"\b\d{3}-\d{3}-\d{3}\s?\d{2}\b", score=0.85),
+                Pattern(name="snils_spaces", regex=r"\b\d{3}\s\d{3}\s\d{3}\s?\d{2}\b", score=0.8),
+            ],
+            context=["снилс", "СНИЛС", "страховое свидетельство"],
+        )
+
+    def validate_result(self, pattern_text: str):
+        return _validate_snils(pattern_text)
+
+
+ru_snils_recognizer = RuSnilsRecognizer()
 
 ru_passport_recognizer = PatternRecognizer(
     supported_entity="PASSPORT",
@@ -78,7 +116,10 @@ ru_passport_recognizer = PatternRecognizer(
             score=0.7,
         ),
     ],
-    context=["паспорт", "серия", "номер паспорта", "документ"],
+    context=[
+        "паспорт", "паспорта", "серия", "номер паспорта", "документ",
+        "загранпаспорт", "паспортные данные", "серию", "удостоверение",
+    ],
 )
 
 ru_email_recognizer = PatternRecognizer(
@@ -110,7 +151,12 @@ ru_date_of_birth_recognizer = PatternRecognizer(
             score=0.4,
         ),
     ],
-    context=["родился", "рождения", "дата рождения", "д.р.", "дата", "родилась"],
+    context=[
+        "родился", "родилась", "родились", "рождения",
+        "рожденный", "рожденная", "рождён",
+        "дата рождения", "д.р.", "ДР:", "год рождения",
+        "дата рожд", "г.р.", "дата",
+    ],
 )
 
 ru_card_number_recognizer = PatternRecognizer(

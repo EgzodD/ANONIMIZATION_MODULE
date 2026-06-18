@@ -5,7 +5,7 @@ from datetime import datetime
 # --- Request ---
 
 class AnonymizeTextRequest(BaseModel):
-    text: str = Field(..., min_length=1, description="Текст для анонимизации")
+    text: str = Field(..., min_length=1, max_length=50_000, description="Текст для анонимизации")
 
     model_config = {
         "json_schema_extra": {
@@ -21,7 +21,7 @@ class AnonymizeConversationRequest(BaseModel):
 
 
 class AnonymizeBatchRequest(BaseModel):
-    conversation_ids: list[int] = Field(..., min_length=1, description="Список ID записей")
+    conversation_ids: list[int] = Field(..., min_length=1, max_length=100, description="Список ID записей")
 
 
 # --- Response ---
@@ -47,7 +47,7 @@ class MessageAnonymized(BaseModel):
     sender_type: str | None
     original_content: str | None
     anonymized_content: str | None
-    content_attributes_anonymized: dict | None
+    content_attributes_anonymized: dict | list | None
     entities_found: list[EntityFound]
     created_at: datetime | None
 
@@ -60,8 +60,8 @@ class ContactAnonymized(BaseModel):
     anonymized_email: str | None
     original_phone: str | None
     anonymized_phone: str | None
-    additional_attributes_anonymized: dict | None
-    custom_attributes_anonymized: dict | None
+    additional_attributes_anonymized: dict | list | None
+    custom_attributes_anonymized: dict | list | None
     entities_found: list[EntityFound]
 
 
@@ -71,8 +71,8 @@ class ConversationResponse(BaseModel):
     display_id: int
     identifier: str | None
     identifier_anonymized: str | None
-    additional_attributes_anonymized: dict | None
-    custom_attributes_anonymized: dict | None
+    additional_attributes_anonymized: dict | list | None
+    custom_attributes_anonymized: dict | list | None
     contact: ContactAnonymized | None
     messages: list[MessageAnonymized]
     total_entities_found: int
@@ -88,6 +88,7 @@ class BatchResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     analyzer_ready: bool
+    db_connected: bool
     supported_entities: list[str]
 
 
