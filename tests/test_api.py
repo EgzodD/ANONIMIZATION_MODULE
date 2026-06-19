@@ -10,8 +10,9 @@ class TestHealthEndpoint:
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "ok"
+        assert data["status"] in ("ok", "degraded")  # degraded когда БД недоступна
         assert data["analyzer_ready"] is True
+        assert "db_connected" in data
 
     def test_health_lists_supported_entities(self, client):
         response = client.get("/health")

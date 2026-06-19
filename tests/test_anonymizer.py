@@ -43,21 +43,25 @@ class TestEmailRecognition:
 
 class TestInnRecognition:
     def test_recognizes_inn_12_with_context(self):
-        result = anonymize_text("ИНН: 772012345678")
+        # 772012345670 — валидный ИНН (12 цифр, проходит алгоритм ФНС)
+        result = anonymize_text("ИНН: 772012345670")
         assert "<INN>" in result["anonymized"]
 
     def test_recognizes_inn_10_with_context(self):
-        result = anonymize_text("ИНН клиента 7701234567")
+        # 7701234560 — валидный ИНН (10 цифр, проходит алгоритм ФНС)
+        result = anonymize_text("ИНН клиента 7701234560")
         assert "<INN>" in result["anonymized"]
 
 
 class TestSnilsRecognition:
     def test_recognizes_snils_dashes(self):
-        result = anonymize_text("СНИЛС 123-456-789 00")
+        # 123-456-789 64 — валидный СНИЛС (проходит алгоритм ПФР)
+        result = anonymize_text("СНИЛС 123-456-789 64")
         assert "<SNILS>" in result["anonymized"]
 
     def test_recognizes_snils_spaces(self):
-        result = anonymize_text("страховое свидетельство 123 456 789 00")
+        # 123 456 789 64 — валидный СНИЛС (пробельный формат)
+        result = anonymize_text("страховое свидетельство 123 456 789 64")
         assert "<SNILS>" in result["anonymized"]
 
 
