@@ -1,10 +1,12 @@
 services:
   db:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: conversations_db
+    env_file: .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
@@ -15,10 +17,10 @@ services:
     build: .
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql://user:password@db:5432/conversations_db
+    env_file: .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

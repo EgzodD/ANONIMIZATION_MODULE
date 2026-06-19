@@ -4,10 +4,17 @@
 Работает с БД Chatwoot: conversations -> messages -> contacts.
 """
 
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import text as sql_text
-from sqlalchemy.orm import Session
+import hmac
+import hashlib
+import logging
+from datetime import datetime
 
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.security.api_key import APIKeyHeader
+from sqlalchemy import text as sql_text
+from sqlalchemy.orm import Session, selectinload
+
+from app.config import settings
 from app.database import get_db, Conversation, Message, Contact
 from app.anonymizer import anonymize_text, anonymize_json, analyzer_engine, EXCLUDED_ENTITIES
 from app.models import (
@@ -23,7 +30,6 @@ from app.models import (
     WebhookPayload,
     WebhookResponse,
 )
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +51,23 @@ app = FastAPI(
         "- PASSPORT — серия и номер паспорта\n"
         "- DATE_OF_BIRTH — дата рождения\n"
         "- CREDIT_CARD — номера карт\n\n"
-        "**Не скрывается:** LOCATION (локация/адрес)"
+        "**Не скрывается:** LOCATION (локация/адрес)\n\n"
+        "**Аутентификация:** X-API-Key header (если задан API_KEY в env)"
     ),
-    version="1.0.0",
+    version="2.0.0",
 )
 
+# ─── API-ключ аутентификация ───────────────────────────────────────────────
+_api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def require_api_key(api_key: str | None = Depends(_api_key_header)):
+    """Проверяет X-API-Key. Если API_KEY не задан в env — аутентификация отключена."""
+    if settings.api_key and api_key != settings.api_key:
+        raise HTTPException(status_code=403, detail="Invalid or missing API key")
+
+
+# ─── Вспомогательные функции анонимизации ─────────────────────────────────
 
 def _anonymize_contact(db: Session, contact_id: int | None) -> ContactAnonymized | None:
     if not contact_id:
@@ -105,16 +123,10 @@ def _anonymize_contact(db: Session, contact_id: int | None) -> ContactAnonymized
     )
 
 
-def _anonymize_messages(db: Session, conversation_id: int) -> list[MessageAnonymized]:
-    messages = (
-        db.query(Message)
-        .filter(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at)
-        .all()
-    )
-
+def _anonymize_messages(messages: list) -> list[MessageAnonymized]:
+    """Анонимизирует список сообщений. Принимает уже загруженные ORM-объекты."""
     results = []
-    for msg in messages:
+    for msg in sorted(messages, key=lambda m: m.created_at or datetime.min):
         all_entities = []
 
         content_anon = None
@@ -148,7 +160,6 @@ def _anonymize_messages(db: Session, conversation_id: int) -> list[MessageAnonym
 def _anonymize_conversation(conv: Conversation, db: Session) -> ConversationResponse:
     all_entities = []
 
-    # Conversation fields
     identifier_anon = None
     if conv.identifier:
         res = anonymize_text(conv.identifier)
@@ -167,13 +178,12 @@ def _anonymize_conversation(conv: Conversation, db: Session) -> ConversationResp
             conv.custom_attributes, all_entities
         )
 
-    # Contact
     contact_result = _anonymize_contact(db, conv.contact_id)
     if contact_result:
         all_entities.extend(contact_result.entities_found)
 
-    # Messages
-    messages_result = _anonymize_messages(db, conv.id)
+    # Используем уже загруженные через selectinload сообщения
+    messages_result = _anonymize_messages(conv.messages)
     for msg in messages_result:
         all_entities.extend(msg.entities_found)
 
@@ -191,6 +201,8 @@ def _anonymize_conversation(conv: Conversation, db: Session) -> ConversationResp
         created_at=conv.created_at,
     )
 
+
+# ─── Эндпоинты ────────────────────────────────────────────────────────────
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 def health_check(db: Session = Depends(get_db)):
@@ -212,14 +224,24 @@ def health_check(db: Session = Depends(get_db)):
     )
 
 
-@app.post("/anonymize/text", response_model=AnonymizeTextResponse, tags=["Anonymization"])
+@app.post(
+    "/anonymize/text",
+    response_model=AnonymizeTextResponse,
+    tags=["Anonymization"],
+    dependencies=[Depends(require_api_key)],
+)
 def anonymize_free_text(request: AnonymizeTextRequest):
     """Анонимизация произвольного текста. Принимает текст, возвращает анонимизированный + маппинг."""
     result = anonymize_text(request.text)
     return AnonymizeTextResponse(**result)
 
 
-@app.post("/anonymize/conversation", response_model=ConversationResponse, tags=["Anonymization"])
+@app.post(
+    "/anonymize/conversation",
+    response_model=ConversationResponse,
+    tags=["Anonymization"],
+    dependencies=[Depends(require_api_key)],
+)
 def anonymize_conversation(
     request: AnonymizeConversationRequest,
     db: Session = Depends(get_db),
@@ -230,22 +252,33 @@ def anonymize_conversation(
     - contacts.name, email, phone, additional_attributes, custom_attributes
     - conversations.identifier, additional_attributes, custom_attributes
     """
-    conv = db.query(Conversation).filter(Conversation.id == request.conversation_id).first()
+    conv = (
+        db.query(Conversation)
+        .filter(Conversation.id == request.conversation_id)
+        .options(selectinload(Conversation.messages))
+        .first()
+    )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
     return _anonymize_conversation(conv, db)
 
 
-@app.post("/anonymize/batch", response_model=BatchResponse, tags=["Anonymization"])
+@app.post(
+    "/anonymize/batch",
+    response_model=BatchResponse,
+    tags=["Anonymization"],
+    dependencies=[Depends(require_api_key)],
+)
 def anonymize_batch(
     request: AnonymizeBatchRequest,
     db: Session = Depends(get_db),
 ):
-    """Пакетная анонимизация нескольких conversations с подтягиванием messages и contacts."""
+    """Пакетная анонимизация нескольких conversations. Сообщения загружаются одним запросом (selectinload)."""
     conversations = (
         db.query(Conversation)
         .filter(Conversation.id.in_(request.conversation_ids))
+        .options(selectinload(Conversation.messages))
         .all()
     )
 
@@ -259,31 +292,34 @@ def anonymize_batch(
 
 
 @app.post("/webhook", response_model=WebhookResponse, tags=["Webhook"])
-def chatwoot_webhook(payload: WebhookPayload):
+async def chatwoot_webhook(http_request: Request, payload: WebhookPayload):
     """
     Принимает webhook от Chatwoot.
+    Если CHATWOOT_WEBHOOK_SECRET задан — проверяет HMAC-SHA256 подпись (X-Chatwoot-Signature).
     Регистрируется в Chatwoot: Settings -> Integrations -> Webhooks.
-    Подписка на событие: message_created.
-
-    Chatwoot отправляет сюда JSON с данными сообщения.
-    Сервис анонимизирует content и данные sender, возвращает результат.
     """
+    if settings.chatwoot_webhook_secret:
+        sig = http_request.headers.get("X-Chatwoot-Signature", "")
+        body = await http_request.body()
+        expected = hmac.new(
+            settings.chatwoot_webhook_secret.encode(), body, hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            raise HTTPException(status_code=403, detail="Invalid webhook signature")
+
     event = payload.event or "unknown"
     all_entities = []
 
-    # Анонимизация content сообщения
     content_anon = None
     if payload.content:
         res = anonymize_text(payload.content)
         content_anon = res["anonymized"]
         all_entities.extend(res["entities_found"])
 
-    # Анонимизация данных отправителя (имя, email, телефон)
     sender_anon = None
     if payload.sender:
         sender_anon, all_entities = anonymize_json(payload.sender, all_entities)
 
-    # ID из payload
     message_id = payload.id
     conversation_id = None
     if payload.conversation and isinstance(payload.conversation, dict):
