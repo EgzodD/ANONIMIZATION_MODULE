@@ -196,4 +196,4 @@ class TestDatasetCoverage:
                 found += 1
 
         recall = found / total if total > 0 else 0
-        assert recall >= 0.75, f"Recall={recall:.2f} < 0.75 (found {found}/{total})"
+        assert recall >= 0.80, f"Recall={recall:.2f} < 0.80 (found {found}/{total})"

@@ -3,7 +3,7 @@
 Presidio по умолчанию не знает русские паттерны — добавляем их вручную.
 """
 
-from presidio_analyzer import PatternRecognizer, Pattern
+from presidio_analyzer import PatternRecognizer, Pattern, EntityRecognizer, RecognizerResult
 
 
 ru_phone_recognizer = PatternRecognizer(
@@ -174,6 +174,56 @@ ru_card_number_recognizer = PatternRecognizer(
 )
 
 
+class NatashaPersonRecognizer(EntityRecognizer):
+    """Распознаватель PERSON на базе Natasha slovnet-NER.
+    Понимает все падежи русских имён через контекстные эмбеддинги.
+    F1 ~0.87 на CPU без GPU.
+    """
+
+    def __init__(self):
+        super().__init__(
+            supported_entities=["PERSON"],
+            supported_language="ru",
+            name="NatashaPersonRecognizer",
+        )
+        self._segmenter = None
+        self._ner = None
+
+    def load(self):
+        from natasha import Segmenter, NewsEmbedding, NewsNERTagger
+        self._segmenter = Segmenter()
+        emb = NewsEmbedding()
+        self._ner = NewsNERTagger(emb)
+
+    def _ensure_loaded(self):
+        if self._ner is None:
+            self.load()
+
+    def analyze(self, text, entities, nlp_artifacts=None):
+        if "PERSON" not in entities:
+            return []
+        self._ensure_loaded()
+
+        from natasha import Doc
+        doc = Doc(text)
+        doc.segment(self._segmenter)
+        doc.tag_ner(self._ner)
+
+        return [
+            RecognizerResult(
+                entity_type="PERSON",
+                start=span.start,
+                end=span.stop,
+                score=0.85,
+            )
+            for span in doc.spans
+            if span.type == "PER"
+        ]
+
+
+natasha_person_recognizer = NatashaPersonRecognizer()
+
+
 ALL_RU_RECOGNIZERS = [
     ru_phone_recognizer,
     ru_inn_recognizer,
@@ -182,4 +232,5 @@ ALL_RU_RECOGNIZERS = [
     ru_email_recognizer,
     ru_date_of_birth_recognizer,
     ru_card_number_recognizer,
+    natasha_person_recognizer,
 ]

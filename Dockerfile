@@ -11,6 +11,12 @@ RUN pip install --no-cache-dir --timeout=300 --retries=5 -r requirements.txt
 
 RUN python -m spacy download ru_core_news_lg --timeout=300
 
+RUN python -c "\
+from natasha import Segmenter, NewsEmbedding, NewsNERTagger; \
+emb = NewsEmbedding(); \
+NewsNERTagger(emb); \
+print('Natasha model ready')"
+
 COPY . .
 
 EXPOSE 8000

@@ -41,6 +41,8 @@ def _build_analyzer() -> AnalyzerEngine:
     )
     for recognizer in ALL_RU_RECOGNIZERS:
         analyzer.registry.add_recognizer(recognizer)
+        if hasattr(recognizer, "load"):
+            recognizer.load()
     return analyzer
 
 
