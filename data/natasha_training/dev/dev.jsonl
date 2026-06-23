@@ -1,0 +1,150 @@
+{"text": "Клиент Павловой Юлии Михайловны обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 31, "type": "PERSON"}]}
+{"text": "Звонил Михайловой Виктории Васильевны, оставил номер 8 (812) 262-87-83.", "spans": [{"start": 7, "stop": 37, "type": "PERSON"}, {"start": 53, "stop": 70, "type": "PHONE_NUMBER"}]}
+{"text": "Уважаемый Поповой Елене! Ваш ИНН 418625652795 подтверждён.", "spans": [{"start": 10, "stop": 23, "type": "PERSON"}, {"start": 33, "stop": 45, "type": "INN"}]}
+{"text": "Обращение от Алексее Лебедеве, телефон для связи +7 905 539 93 21.", "spans": [{"start": 13, "stop": 29, "type": "PERSON"}, {"start": 49, "stop": 65, "type": "PHONE_NUMBER"}]}
+{"text": "Свяжитесь с Роман Михайловича Попова по телефону +7 800 596 68 73.", "spans": [{"start": 12, "stop": 36, "type": "PERSON"}, {"start": 49, "stop": 65, "type": "PHONE_NUMBER"}]}
+{"text": "Прошу записать: Дениса Викторовича Смирнова, +7 915 167 48 95, natasha.k@gmail.com.", "spans": [{"start": 16, "stop": 43, "type": "PERSON"}, {"start": 45, "stop": 61, "type": "PHONE_NUMBER"}, {"start": 63, "stop": 82, "type": "EMAIL_ADDRESS"}]}
+{"text": "Запись на приём: Ивана Егорова, дата рождения 12.02.1973.", "spans": [{"start": 17, "stop": 30, "type": "PERSON"}, {"start": 46, "stop": 56, "type": "DATE_OF_BIRTH"}]}
+{"text": "Уважаемый морозова марина! Ваш ИНН 8251353461 подтверждён.", "spans": [{"start": 10, "stop": 25, "type": "PERSON"}, {"start": 35, "stop": 45, "type": "INN"}]}
+{"text": "Свяжитесь с Е.Б. Козлову по телефону 8 (812) 179-46-40.", "spans": [{"start": 12, "stop": 24, "type": "PERSON"}, {"start": 37, "stop": 54, "type": "PHONE_NUMBER"}]}
+{"text": "Оформляю на андрея зайцев, карта оплаты 5469-9611-2320-1817.", "spans": [{"start": 12, "stop": 25, "type": "PERSON"}, {"start": 40, "stop": 59, "type": "CREDIT_CARD"}]}
+{"text": "Прошу записать: П.И. Зайцева, +7(903)675-73-27, s.ivanova@company.ru.", "spans": [{"start": 16, "stop": 28, "type": "PERSON"}, {"start": 30, "stop": 46, "type": "PHONE_NUMBER"}, {"start": 48, "stop": 68, "type": "EMAIL_ADDRESS"}]}
+{"text": "Договор на имя Олеге Степанове, дата рождения 24.11.1988.", "spans": [{"start": 15, "stop": 30, "type": "PERSON"}, {"start": 46, "stop": 56, "type": "DATE_OF_BIRTH"}]}
+{"text": "Жалоба от козлова романа, контактный +7 905 936 67 54, почта m.makarova@yandex.ru.", "spans": [{"start": 10, "stop": 24, "type": "PERSON"}, {"start": 37, "stop": 53, "type": "PHONE_NUMBER"}, {"start": 61, "stop": 81, "type": "EMAIL_ADDRESS"}]}
+{"text": "Я Оксану Дмитриевну Фёдорову, мой СНИЛС 723 590 960 12, родилась 26.07.1985.", "spans": [{"start": 2, "stop": 28, "type": "PERSON"}, {"start": 40, "stop": 54, "type": "SNILS"}, {"start": 65, "stop": 75, "type": "DATE_OF_BIRTH"}]}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Я Натальей Макаровой, мой СНИЛС 759 655 553 73, родилась 22.07.1979.", "spans": [{"start": 2, "stop": 20, "type": "PERSON"}, {"start": 32, "stop": 46, "type": "SNILS"}, {"start": 57, "stop": 67, "type": "DATE_OF_BIRTH"}]}
+{"text": "Заказ принят. Клиент Михаила Дмитриевича Попова, email m.makarova@test.org.", "spans": [{"start": 21, "stop": 47, "type": "PERSON"}, {"start": 55, "stop": 74, "type": "EMAIL_ADDRESS"}]}
+{"text": "Данные клиента никитин сергей игоревич: ИНН 5183473829, паспорт 83 83 595631.", "spans": [{"start": 15, "stop": 38, "type": "PERSON"}, {"start": 44, "stop": 54, "type": "INN"}, {"start": 64, "stop": 76, "type": "PASSPORT"}]}
+{"text": "Звонил анне сергеевне волковой, оставил номер +79995662811.", "spans": [{"start": 7, "stop": 30, "type": "PERSON"}, {"start": 46, "stop": 58, "type": "PHONE_NUMBER"}]}
+{"text": "Свяжитесь с Смирновой Екатерине Петровне по телефону 8 (905) 647-24-10.", "spans": [{"start": 12, "stop": 40, "type": "PERSON"}, {"start": 53, "stop": 70, "type": "PHONE_NUMBER"}]}
+{"text": "Свяжитесь с Орлову Екатерину по телефону +7(905)851-96-85.", "spans": [{"start": 12, "stop": 28, "type": "PERSON"}, {"start": 41, "stop": 57, "type": "PHONE_NUMBER"}]}
+{"text": "Петрова Андрея обратился с паспортом 90 76 659921 и картой 2202 7972 4915 4111.", "spans": [{"start": 0, "stop": 14, "type": "PERSON"}, {"start": 37, "stop": 49, "type": "PASSPORT"}, {"start": 59, "stop": 78, "type": "CREDIT_CARD"}]}
+{"text": "Регистрация: Степанова Алексея, д.р. 13.11.1966, почта m.makarova@bk.ru.", "spans": [{"start": 13, "stop": 30, "type": "PERSON"}, {"start": 37, "stop": 47, "type": "DATE_OF_BIRTH"}, {"start": 55, "stop": 71, "type": "EMAIL_ADDRESS"}]}
+{"text": "Отправьте документы на почту s.ivanova@list.ru, получатель Павлом Павловичем Соколовым.", "spans": [{"start": 29, "stop": 46, "type": "EMAIL_ADDRESS"}, {"start": 59, "stop": 86, "type": "PERSON"}]}
+{"text": "Уточните, пожалуйста, детали вашего запроса.", "spans": []}
+{"text": "Клиент М.Д. Егоров обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 18, "type": "PERSON"}]}
+{"text": "Клиент С.Д. Волковой обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 20, "type": "PERSON"}]}
+{"text": "Свяжитесь с Попова Сергея Николаевича по телефону +79999818890.", "spans": [{"start": 12, "stop": 37, "type": "PERSON"}, {"start": 50, "stop": 62, "type": "PHONE_NUMBER"}]}
+{"text": "Прошу записать: юлии алексеевой, +7 800 229 45 15, d.smirnov@company.ru.", "spans": [{"start": 16, "stop": 31, "type": "PERSON"}, {"start": 33, "stop": 49, "type": "PHONE_NUMBER"}, {"start": 51, "stop": 71, "type": "EMAIL_ADDRESS"}]}
+{"text": "Запись на приём: егоровой дарье борисовне, дата рождения 13.06.2001.", "spans": [{"start": 17, "stop": 41, "type": "PERSON"}, {"start": 57, "stop": 67, "type": "DATE_OF_BIRTH"}]}
+{"text": "Я А.А. Егорова, мой СНИЛС 609 177 982 29, родилась 01.09.2002.", "spans": [{"start": 2, "stop": 14, "type": "PERSON"}, {"start": 26, "stop": 40, "type": "SNILS"}, {"start": 51, "stop": 61, "type": "DATE_OF_BIRTH"}]}
+{"text": "Обращение от Т.И. Фёдорову, телефон для связи 8-915-994-19-34.", "spans": [{"start": 13, "stop": 26, "type": "PERSON"}, {"start": 46, "stop": 61, "type": "PHONE_NUMBER"}]}
+{"text": "Перевод на карту 4276-2190-6464-6898 получателю И.А. Михайлову.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 62, "type": "PERSON"}]}
+{"text": "Заказ принят. Клиент Иваном Анатольевичем Соловьями, email o.fedorova@yandex.ru.", "spans": [{"start": 21, "stop": 51, "type": "PERSON"}, {"start": 59, "stop": 79, "type": "EMAIL_ADDRESS"}]}
+{"text": "алёной сергеевной обратился с паспортом 19 94 888119 и картой 5536-8064-7635-3308.", "spans": [{"start": 0, "stop": 17, "type": "PERSON"}, {"start": 40, "stop": 52, "type": "PASSPORT"}, {"start": 62, "stop": 81, "type": "CREDIT_CARD"}]}
+{"text": "Данные клиента Соколову Полину Викторовну: ИНН 609314181801, паспорт 62 18 445356.", "spans": [{"start": 15, "stop": 41, "type": "PERSON"}, {"start": 47, "stop": 59, "type": "INN"}, {"start": 69, "stop": 81, "type": "PASSPORT"}]}
+{"text": "Здравствуйте, меня зовут виктория орлова, прошу помочь с заявкой.", "spans": [{"start": 25, "stop": 40, "type": "PERSON"}]}
+{"text": "Отправьте документы на почту p.orlov@yandex.ru, получатель Алёна Дмитриевна.", "spans": [{"start": 29, "stop": 46, "type": "EMAIL_ADDRESS"}, {"start": 59, "stop": 75, "type": "PERSON"}]}
+{"text": "Свяжитесь с Е.М. Михайлову по телефону +7 915 574 89 72.", "spans": [{"start": 12, "stop": 26, "type": "PERSON"}, {"start": 39, "stop": 55, "type": "PHONE_NUMBER"}]}
+{"text": "Клиент соловьи григорий обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 23, "type": "PERSON"}]}
+{"text": "Здравствуйте, чем могу помочь?", "spans": []}
+{"text": "Уточните, пожалуйста, детали вашего запроса.", "spans": []}
+{"text": "Клиент наталье поповой обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 22, "type": "PERSON"}]}
+{"text": "Оформляю на Павла Никитина, карта оплаты 4276 8452 2042 4670.", "spans": [{"start": 12, "stop": 26, "type": "PERSON"}, {"start": 41, "stop": 60, "type": "CREDIT_CARD"}]}
+{"text": "Регистрация: Д.Н. Поповой, д.р. 14.02.1960, почта m.makarova@mail.ru.", "spans": [{"start": 13, "stop": 25, "type": "PERSON"}, {"start": 32, "stop": 42, "type": "DATE_OF_BIRTH"}, {"start": 50, "stop": 68, "type": "EMAIL_ADDRESS"}]}
+{"text": "Кузнецова Артёма обратился с паспортом 95 21 465887 и картой 4081 7675 8767 7616.", "spans": [{"start": 0, "stop": 16, "type": "PERSON"}, {"start": 39, "stop": 51, "type": "PASSPORT"}, {"start": 61, "stop": 80, "type": "CREDIT_CARD"}]}
+{"text": "Добрый день, это Ириной Сергеевной Никитиной. Мой ИНН 2428699041.", "spans": [{"start": 17, "stop": 44, "type": "PERSON"}, {"start": 54, "stop": 64, "type": "INN"}]}
+{"text": "Прошу проверить ИНН 919058651832 клиента Наталью Петровну Семёнову.", "spans": [{"start": 20, "stop": 32, "type": "INN"}, {"start": 41, "stop": 66, "type": "PERSON"}]}
+{"text": "Прошу записать: Зайцами Егором Васильевичем, +79995611332, o.fedorova@inbox.ru.", "spans": [{"start": 16, "stop": 43, "type": "PERSON"}, {"start": 45, "stop": 57, "type": "PHONE_NUMBER"}, {"start": 59, "stop": 78, "type": "EMAIL_ADDRESS"}]}
+{"text": "Здравствуйте, чем могу помочь?", "spans": []}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Уточните, пожалуйста, детали вашего запроса.", "spans": []}
+{"text": "Регистрация: Фёдоровой Ирине Викторовне, д.р. 19.01.2005, почта m.makarova@list.ru.", "spans": [{"start": 13, "stop": 39, "type": "PERSON"}, {"start": 46, "stop": 56, "type": "DATE_OF_BIRTH"}, {"start": 64, "stop": 82, "type": "EMAIL_ADDRESS"}]}
+{"text": "Обращение от Дениса Ивановича, телефон для связи +7(800)243-67-30.", "spans": [{"start": 13, "stop": 29, "type": "PERSON"}, {"start": 49, "stop": 65, "type": "PHONE_NUMBER"}]}
+{"text": "Я волкова людмила, мой СНИЛС 275-480-157 92, родилась 13/05/1984.", "spans": [{"start": 2, "stop": 17, "type": "PERSON"}, {"start": 29, "stop": 43, "type": "SNILS"}, {"start": 54, "stop": 64, "type": "DATE_OF_BIRTH"}]}
+{"text": "Данные клиента Орловой Юлией Ивановной: ИНН 552899316087, паспорт 78 68 431272.", "spans": [{"start": 15, "stop": 38, "type": "PERSON"}, {"start": 44, "stop": 56, "type": "INN"}, {"start": 66, "stop": 78, "type": "PASSPORT"}]}
+{"text": "Оформляю на Светлану Викторовну Никитину, карта оплаты 5469-5071-8964-1428.", "spans": [{"start": 12, "stop": 40, "type": "PERSON"}, {"start": 55, "stop": 74, "type": "CREDIT_CARD"}]}
+{"text": "Свяжитесь с Александра Степанова по телефону 8 (905) 834-53-36.", "spans": [{"start": 12, "stop": 32, "type": "PERSON"}, {"start": 45, "stop": 62, "type": "PHONE_NUMBER"}]}
+{"text": "Звонил Ирине Михайловой, оставил номер +7(925)669-11-76.", "spans": [{"start": 7, "stop": 23, "type": "PERSON"}, {"start": 39, "stop": 55, "type": "PHONE_NUMBER"}]}
+{"text": "Егором Александровичем Орловым обратился с паспортом 63 94 712024 и картой 5536 8565 5183 4272.", "spans": [{"start": 0, "stop": 30, "type": "PERSON"}, {"start": 53, "stop": 65, "type": "PASSPORT"}, {"start": 75, "stop": 94, "type": "CREDIT_CARD"}]}
+{"text": "Здравствуйте, меня зовут орлову татьяну, прошу помочь с заявкой.", "spans": [{"start": 25, "stop": 39, "type": "PERSON"}]}
+{"text": "Регистрация: Александра Петрова, д.р. 15/03/1985, почта p.orlov@mail.ru.", "spans": [{"start": 13, "stop": 31, "type": "PERSON"}, {"start": 38, "stop": 48, "type": "DATE_OF_BIRTH"}, {"start": 56, "stop": 71, "type": "EMAIL_ADDRESS"}]}
+{"text": "Заявка №5043: Д.В. Соловьёв, паспорт 88 83 722650.", "spans": [{"start": 14, "stop": 27, "type": "PERSON"}, {"start": 37, "stop": 49, "type": "PASSPORT"}]}
+{"text": "Заявка №1134: Андрея Павлова, паспорт 73 57 586208.", "spans": [{"start": 14, "stop": 28, "type": "PERSON"}, {"start": 38, "stop": 50, "type": "PASSPORT"}]}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Обращение от Волкова Дмитрия, телефон для связи 8-915-105-42-74.", "spans": [{"start": 13, "stop": 28, "type": "PERSON"}, {"start": 48, "stop": 63, "type": "PHONE_NUMBER"}]}
+{"text": "Уважаемый елена макарова! Ваш ИНН 0341990975 подтверждён.", "spans": [{"start": 10, "stop": 24, "type": "PERSON"}, {"start": 34, "stop": 44, "type": "INN"}]}
+{"text": "Заказ принят. Клиент Семёновой Екатериной Сергеевной, email natasha.k@company.ru.", "spans": [{"start": 21, "stop": 52, "type": "PERSON"}, {"start": 60, "stop": 80, "type": "EMAIL_ADDRESS"}]}
+{"text": "Звонил Кирилла Семёнова, оставил номер +7 999 442 48 24.", "spans": [{"start": 7, "stop": 23, "type": "PERSON"}, {"start": 39, "stop": 55, "type": "PHONE_NUMBER"}]}
+{"text": "Здравствуйте, чем могу помочь?", "spans": []}
+{"text": "Добрый день, это Соловьёвой Натальей Дмитриевной. Мой ИНН 2545991025.", "spans": [{"start": 17, "stop": 48, "type": "PERSON"}, {"start": 58, "stop": 68, "type": "INN"}]}
+{"text": "Клиент М.Н. Васильеву обратился по вопросу кредита.", "spans": [{"start": 7, "stop": 21, "type": "PERSON"}]}
+{"text": "Заказ принят. Клиент О.А. Козлова, email client123@bk.ru.", "spans": [{"start": 21, "stop": 33, "type": "PERSON"}, {"start": 41, "stop": 56, "type": "EMAIL_ADDRESS"}]}
+{"text": "Прошу записать: Роман Алексеевич, 8 (905) 562-49-69, natasha.k@gmail.com.", "spans": [{"start": 16, "stop": 32, "type": "PERSON"}, {"start": 34, "stop": 51, "type": "PHONE_NUMBER"}, {"start": 53, "stop": 72, "type": "EMAIL_ADDRESS"}]}
+{"text": "Звонил Егоров Виктор Иванович, оставил номер +7 916 154 72 49.", "spans": [{"start": 7, "stop": 29, "type": "PERSON"}, {"start": 45, "stop": 61, "type": "PHONE_NUMBER"}]}
+{"text": "Менеджер Попову Ольгу перезвонит на 8-915-998-41-76.", "spans": [{"start": 9, "stop": 21, "type": "PERSON"}, {"start": 36, "stop": 51, "type": "PHONE_NUMBER"}]}
+{"text": "По вопросу Г.А. Степановой — СНИЛС 102-707-903 22, телефон 8 (915) 276-90-16.", "spans": [{"start": 11, "stop": 26, "type": "PERSON"}, {"start": 35, "stop": 49, "type": "SNILS"}, {"start": 59, "stop": 76, "type": "PHONE_NUMBER"}]}
+{"text": "Клиент: Павле Николаевиче Фёдорове, ИНН 4821759469, СНИЛС 474 367 136 09.", "spans": [{"start": 8, "stop": 34, "type": "PERSON"}, {"start": 40, "stop": 50, "type": "INN"}, {"start": 58, "stop": 72, "type": "SNILS"}]}
+{"text": "Запись на приём: А.Д. Новикова, дата рождения 25/12/2004.", "spans": [{"start": 17, "stop": 30, "type": "PERSON"}, {"start": 46, "stop": 56, "type": "DATE_OF_BIRTH"}]}
+{"text": "Заказ принят. Клиент Михайлову Александру, email p.orlov@mail.ru.", "spans": [{"start": 21, "stop": 41, "type": "PERSON"}, {"start": 49, "stop": 64, "type": "EMAIL_ADDRESS"}]}
+{"text": "Жалоба от соколов григорий васильевич, контактный 8-905-951-34-81, почта d.smirnov@gmail.com.", "spans": [{"start": 10, "stop": 37, "type": "PERSON"}, {"start": 50, "stop": 65, "type": "PHONE_NUMBER"}, {"start": 73, "stop": 92, "type": "EMAIL_ADDRESS"}]}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Документы приняты, проверка займёт два рабочих дня.", "spans": []}
+{"text": "Заявка №3185: Кириллом Соловьями, паспорт 80 50 846454.", "spans": [{"start": 14, "stop": 32, "type": "PERSON"}, {"start": 42, "stop": 54, "type": "PASSPORT"}]}
+{"text": "Регистрация: М.А. Соловьёвой, д.р. 12/07/1959, почта o.fedorova@test.org.", "spans": [{"start": 13, "stop": 28, "type": "PERSON"}, {"start": 35, "stop": 45, "type": "DATE_OF_BIRTH"}, {"start": 53, "stop": 72, "type": "EMAIL_ADDRESS"}]}
+{"text": "Клиент: Полине Сергеевне Новиковой, ИНН 363718923977, СНИЛС 231 260 432 10.", "spans": [{"start": 8, "stop": 34, "type": "PERSON"}, {"start": 40, "stop": 52, "type": "INN"}, {"start": 60, "stop": 74, "type": "SNILS"}]}
+{"text": "Запись на приём: Соловьёвой Оксаной Петровной, дата рождения 17/11/1984.", "spans": [{"start": 17, "stop": 45, "type": "PERSON"}, {"start": 61, "stop": 71, "type": "DATE_OF_BIRTH"}]}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Я дмитрий орлов, мой СНИЛС 776-253-492 40, родилась 19.09.1969.", "spans": [{"start": 2, "stop": 15, "type": "PERSON"}, {"start": 27, "stop": 41, "type": "SNILS"}, {"start": 52, "stop": 62, "type": "DATE_OF_BIRTH"}]}
+{"text": "Здравствуйте, чем могу помочь?", "spans": []}
+{"text": "Оформляю на Егором Игоревичем Никитиным, карта оплаты 5536-4705-6996-9975.", "spans": [{"start": 12, "stop": 39, "type": "PERSON"}, {"start": 54, "stop": 73, "type": "CREDIT_CARD"}]}
+{"text": "Уважаемый Ивану Борисовичу Новикову! Ваш ИНН 279788191464 подтверждён.", "spans": [{"start": 10, "stop": 35, "type": "PERSON"}, {"start": 45, "stop": 57, "type": "INN"}]}
+{"text": "Договор на имя Никитиной Галине Анатольевне, дата рождения 08.05.1967.", "spans": [{"start": 15, "stop": 43, "type": "PERSON"}, {"start": 59, "stop": 69, "type": "DATE_OF_BIRTH"}]}
+{"text": "Оформляю на соколова артёма, карта оплаты 5469-2669-6365-6592.", "spans": [{"start": 12, "stop": 27, "type": "PERSON"}, {"start": 42, "stop": 61, "type": "CREDIT_CARD"}]}
+{"text": "Данные клиента Михайлов Роман Андреевич: ИНН 938597779063, паспорт 21 46 777693.", "spans": [{"start": 15, "stop": 39, "type": "PERSON"}, {"start": 45, "stop": 57, "type": "INN"}, {"start": 67, "stop": 79, "type": "PASSPORT"}]}
+{"text": "Договор на имя Екатерину Новикову, дата рождения 02.02.1966.", "spans": [{"start": 15, "stop": 33, "type": "PERSON"}, {"start": 49, "stop": 59, "type": "DATE_OF_BIRTH"}]}
+{"text": "Я Кузнецовой Татьяне Борисовне, мой СНИЛС 795 995 946 27, родилась 06.02.1984.", "spans": [{"start": 2, "stop": 30, "type": "PERSON"}, {"start": 42, "stop": 56, "type": "SNILS"}, {"start": 67, "stop": 77, "type": "DATE_OF_BIRTH"}]}
+{"text": "Уважаемый В.А. Михайловой! Ваш ИНН 5717320300 подтверждён.", "spans": [{"start": 10, "stop": 25, "type": "PERSON"}, {"start": 35, "stop": 45, "type": "INN"}]}
+{"text": "Менеджер Наталье Козловой перезвонит на +79251177499.", "spans": [{"start": 9, "stop": 25, "type": "PERSON"}, {"start": 40, "stop": 52, "type": "PHONE_NUMBER"}]}
+{"text": "Контакт: Сергеем Васильевым, +7(925)355-24-13, user.test@bk.ru.", "spans": [{"start": 9, "stop": 27, "type": "PERSON"}, {"start": 29, "stop": 45, "type": "PHONE_NUMBER"}, {"start": 47, "stop": 62, "type": "EMAIL_ADDRESS"}]}
+{"text": "Прошу проверить ИНН 710947775266 клиента Екатерина Петровна Павлова.", "spans": [{"start": 20, "stop": 32, "type": "INN"}, {"start": 41, "stop": 67, "type": "PERSON"}]}
+{"text": "Звонил С.П. Захарова, оставил номер +7(903)582-45-30.", "spans": [{"start": 7, "stop": 20, "type": "PERSON"}, {"start": 36, "stop": 52, "type": "PHONE_NUMBER"}]}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Документы приняты, проверка займёт два рабочих дня.", "spans": []}
+{"text": "Документы приняты, проверка займёт два рабочих дня.", "spans": []}
+{"text": "Свяжитесь с елену александровну соколову по телефону +78126611613.", "spans": [{"start": 12, "stop": 40, "type": "PERSON"}, {"start": 53, "stop": 65, "type": "PHONE_NUMBER"}]}
+{"text": "Звонил Смирновым Григорием Андреевичем, оставил номер +74955124020.", "spans": [{"start": 7, "stop": 38, "type": "PERSON"}, {"start": 54, "stop": 66, "type": "PHONE_NUMBER"}]}
+{"text": "Здравствуйте, меня зовут Виктория Фёдорова, прошу помочь с заявкой.", "spans": [{"start": 25, "stop": 42, "type": "PERSON"}]}
+{"text": "Менеджер Н.А. Кузнецовой перезвонит на +7 903 431 95 50.", "spans": [{"start": 9, "stop": 24, "type": "PERSON"}, {"start": 39, "stop": 55, "type": "PHONE_NUMBER"}]}
+{"text": "Перевод на карту 2202-4321-8470-5128 получателю Алёны Игоревны.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 62, "type": "PERSON"}]}
+{"text": "роману морозову обратился с паспортом 68 11 486839 и картой 5469 4777 9237 4979.", "spans": [{"start": 0, "stop": 15, "type": "PERSON"}, {"start": 38, "stop": 50, "type": "PASSPORT"}, {"start": 60, "stop": 79, "type": "CREDIT_CARD"}]}
+{"text": "Отправьте документы на почту a.belov@mail.ru, получатель Макарову Виктору.", "spans": [{"start": 29, "stop": 44, "type": "EMAIL_ADDRESS"}, {"start": 57, "stop": 73, "type": "PERSON"}]}
+{"text": "Свяжитесь с е.б. петровой по телефону +7 903 499 67 71.", "spans": [{"start": 12, "stop": 25, "type": "PERSON"}, {"start": 38, "stop": 54, "type": "PHONE_NUMBER"}]}
+{"text": "Регистрация: Соловьёвой Дарье Алексеевне, д.р. 05.05.1967, почта o.fedorova@mail.ru.", "spans": [{"start": 13, "stop": 40, "type": "PERSON"}, {"start": 47, "stop": 57, "type": "DATE_OF_BIRTH"}, {"start": 65, "stop": 83, "type": "EMAIL_ADDRESS"}]}
+{"text": "Перевод на карту 4276-0136-8174-2410 получателю п.а. макаровой.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 62, "type": "PERSON"}]}
+{"text": "Уточните, пожалуйста, детали вашего запроса.", "spans": []}
+{"text": "Клиент: Николаем Захаровым, ИНН 685574443153, СНИЛС 351 823 374 70.", "spans": [{"start": 8, "stop": 26, "type": "PERSON"}, {"start": 32, "stop": 44, "type": "INN"}, {"start": 52, "stop": 66, "type": "SNILS"}]}
+{"text": "Добрый день, это С.Н. Волкова. Мой ИНН 072791033646.", "spans": [{"start": 17, "stop": 29, "type": "PERSON"}, {"start": 39, "stop": 51, "type": "INN"}]}
+{"text": "Прошу проверить ИНН 027703843031 клиента полины павловны.", "spans": [{"start": 20, "stop": 32, "type": "INN"}, {"start": 41, "stop": 56, "type": "PERSON"}]}
+{"text": "Запись на приём: Степановой Анне, дата рождения 22/06/1987.", "spans": [{"start": 17, "stop": 32, "type": "PERSON"}, {"start": 48, "stop": 58, "type": "DATE_OF_BIRTH"}]}
+{"text": "Прошу записать: Захарове Максиме Николаевиче, +7 495 613 59 26, natasha.k@yandex.ru.", "spans": [{"start": 16, "stop": 44, "type": "PERSON"}, {"start": 46, "stop": 62, "type": "PHONE_NUMBER"}, {"start": 64, "stop": 83, "type": "EMAIL_ADDRESS"}]}
+{"text": "Обращение от Оксаны Анатольевны Алексеевой, телефон для связи +78127882360.", "spans": [{"start": 13, "stop": 42, "type": "PERSON"}, {"start": 62, "stop": 74, "type": "PHONE_NUMBER"}]}
+{"text": "Регистрация: Андрей Морозов, д.р. 02/01/2000, почта natasha.k@company.ru.", "spans": [{"start": 13, "stop": 27, "type": "PERSON"}, {"start": 34, "stop": 44, "type": "DATE_OF_BIRTH"}, {"start": 52, "stop": 72, "type": "EMAIL_ADDRESS"}]}
+{"text": "По вопросу Кузнецовой Дарьей — СНИЛС 637-454-589 30, телефон +7 812 907 53 97.", "spans": [{"start": 11, "stop": 28, "type": "PERSON"}, {"start": 37, "stop": 51, "type": "SNILS"}, {"start": 61, "stop": 77, "type": "PHONE_NUMBER"}]}
+{"text": "Добрый день, это ивана николаевича козлова. Мой ИНН 1591497500.", "spans": [{"start": 17, "stop": 42, "type": "PERSON"}, {"start": 52, "stop": 62, "type": "INN"}]}
+{"text": "По вопросу Соколова Александра — СНИЛС 783 667 428 64, телефон 8 (915) 395-67-58.", "spans": [{"start": 11, "stop": 30, "type": "PERSON"}, {"start": 39, "stop": 53, "type": "SNILS"}, {"start": 63, "stop": 80, "type": "PHONE_NUMBER"}]}
+{"text": "Клиент: Волковой Людмиле, ИНН 627028951784, СНИЛС 187 026 217 70.", "spans": [{"start": 8, "stop": 24, "type": "PERSON"}, {"start": 30, "stop": 42, "type": "INN"}, {"start": 50, "stop": 64, "type": "SNILS"}]}
+{"text": "Обращение от Ольге Петровой, телефон для связи +7(916)450-31-58.", "spans": [{"start": 13, "stop": 27, "type": "PERSON"}, {"start": 47, "stop": 63, "type": "PHONE_NUMBER"}]}
+{"text": "Уточните, пожалуйста, детали вашего запроса.", "spans": []}
+{"text": "Отправьте документы на почту p.orlov@yandex.ru, получатель П.В. Кузнецова.", "spans": [{"start": 29, "stop": 46, "type": "EMAIL_ADDRESS"}, {"start": 59, "stop": 73, "type": "PERSON"}]}
+{"text": "Контакт: М.И. Макаровой, +7 925 559 32 97, s.ivanova@mail.ru.", "spans": [{"start": 9, "stop": 23, "type": "PERSON"}, {"start": 25, "stop": 41, "type": "PHONE_NUMBER"}, {"start": 43, "stop": 60, "type": "EMAIL_ADDRESS"}]}
+{"text": "Заказ принят. Клиент Григории Дмитриевиче, email a.belov@bk.ru.", "spans": [{"start": 21, "stop": 41, "type": "PERSON"}, {"start": 49, "stop": 62, "type": "EMAIL_ADDRESS"}]}
+{"text": "Александром Ивановичем обратился с паспортом 29 87 200976 и картой 5469 7796 9827 0639.", "spans": [{"start": 0, "stop": 22, "type": "PERSON"}, {"start": 45, "stop": 57, "type": "PASSPORT"}, {"start": 67, "stop": 86, "type": "CREDIT_CARD"}]}
+{"text": "Перевод на карту 4276 4942 3366 8482 получателю Смирновой Юлии.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 62, "type": "PERSON"}]}
+{"text": "Уважаемый Г.А. Михайлова! Ваш ИНН 844431069812 подтверждён.", "spans": [{"start": 10, "stop": 24, "type": "PERSON"}, {"start": 34, "stop": 46, "type": "INN"}]}
+{"text": "Свяжитесь с Денисе Павловиче по телефону 8-999-500-69-96.", "spans": [{"start": 12, "stop": 28, "type": "PERSON"}, {"start": 41, "stop": 56, "type": "PHONE_NUMBER"}]}
+{"text": "Документы приняты, проверка займёт два рабочих дня.", "spans": []}
+{"text": "Заявка зарегистрирована, ожидайте ответа в течение дня.", "spans": []}
+{"text": "Обращение от Светлане Михайловне, телефон для связи 8 (903) 213-99-33.", "spans": [{"start": 13, "stop": 32, "type": "PERSON"}, {"start": 52, "stop": 69, "type": "PHONE_NUMBER"}]}
+{"text": "Перевод на карту 5469-3438-2133-1287 получателю петрову марию.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 61, "type": "PERSON"}]}
+{"text": "Перевод на карту 4276-9481-0420-5111 получателю М.Д. Орлове.", "spans": [{"start": 17, "stop": 36, "type": "CREDIT_CARD"}, {"start": 48, "stop": 59, "type": "PERSON"}]}
+{"text": "Заявка №3826: Юлией Васильевной Макаровой, паспорт 50 25 350161.", "spans": [{"start": 14, "stop": 41, "type": "PERSON"}, {"start": 51, "stop": 63, "type": "PASSPORT"}]}
+{"text": "Звонил Васильевой Светлане, оставил номер +7 800 443 69 62.", "spans": [{"start": 7, "stop": 26, "type": "PERSON"}, {"start": 42, "stop": 58, "type": "PHONE_NUMBER"}]}
+{"text": "С.А. Степанова обратился с паспортом 26 95 836971 и картой 5536-1531-6937-8331.", "spans": [{"start": 0, "stop": 14, "type": "PERSON"}, {"start": 37, "stop": 49, "type": "PASSPORT"}, {"start": 59, "stop": 78, "type": "CREDIT_CARD"}]}
+{"text": "Добрый день, это Оксана Дмитриевна Кузнецова. Мой ИНН 528098851694.", "spans": [{"start": 17, "stop": 44, "type": "PERSON"}, {"start": 54, "stop": 66, "type": "INN"}]}
+{"text": "Добрый день, это Егор Викторович. Мой ИНН 856467997010.", "spans": [{"start": 17, "stop": 32, "type": "PERSON"}, {"start": 42, "stop": 54, "type": "INN"}]}
+{"text": "По вопросу Светлану Анатольевну — СНИЛС 997 335 494 87, телефон 8-999-191-84-11.", "spans": [{"start": 11, "stop": 31, "type": "PERSON"}, {"start": 40, "stop": 54, "type": "SNILS"}, {"start": 64, "stop": 79, "type": "PHONE_NUMBER"}]}
+{"text": "Я сергея соловьёв, мой СНИЛС 336 293 449 90, родилась 21/04/1972.", "spans": [{"start": 2, "stop": 17, "type": "PERSON"}, {"start": 29, "stop": 43, "type": "SNILS"}, {"start": 54, "stop": 64, "type": "DATE_OF_BIRTH"}]}
+{"text": "кузнецовой анне михайловне обратился с паспортом 22 93 451577 и картой 5469-2254-0627-4700.", "spans": [{"start": 0, "stop": 26, "type": "PERSON"}, {"start": 49, "stop": 61, "type": "PASSPORT"}, {"start": 71, "stop": 90, "type": "CREDIT_CARD"}]}
+{"text": "Заявка №3725: Наталья Волкова, паспорт 65 28 356059.", "spans": [{"start": 14, "stop": 29, "type": "PERSON"}, {"start": 39, "stop": 51, "type": "PASSPORT"}]}
