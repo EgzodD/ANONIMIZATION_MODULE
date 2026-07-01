@@ -1,0 +1,198 @@
+{
+  "dataset": "data/natasha_training/test/test.jsonl",
+  "n": 150,
+  "cells": {
+    "1": {
+      "name": "Тест 1 (база: prep off, train off)",
+      "prep": false,
+      "n_examples": 150,
+      "leak_total": 318,
+      "leak_leaked": 3,
+      "leak_rate_pct": 0.94,
+      "value_recall_pct": 99.06,
+      "span_valid": true,
+      "strict": {
+        "per_type": {
+          "PERSON": {
+            "tp": 119,
+            "fp": 19,
+            "fn": 13,
+            "P": 86.2,
+            "R": 90.2,
+            "F2": 89.3
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 77.0,
+          "R": 95.9,
+          "F2": 91.4,
+          "tp": 305,
+          "fp": 91,
+          "fn": 13
+        },
+        "macro": {
+          "P": 79.9,
+          "R": 98.8,
+          "F2": 92.4
+        }
+      },
+      "relaxed": {
+        "per_type": {
+          "PERSON": {
+            "tp": 129,
+            "fp": 9,
+            "fn": 3,
+            "P": 93.5,
+            "R": 97.7,
+            "F2": 96.8
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 79.5,
+          "R": 99.1,
+          "F2": 94.4,
+          "tp": 315,
+          "fp": 81,
+          "fn": 3
+        },
+        "macro": {
+          "P": 80.8,
+          "R": 99.7,
+          "F2": 93.4
+        }
+      },
+      "timing": {
+        "ms_per_text_median": 11.77,
+        "ms_per_text_mean": 12.39,
+        "ms_per_text_std": 1.43,
+        "throughput_per_sec": 85.0,
+        "repeats_K": 5,
+        "warmup": 1
+      }
+    },
+    "2": {
+      "name": "Тест 2",
+      "blocked": "GRAMLYNX_URL не задан — сервис GramLynx не запущен"
+    },
+    "3": {
+      "name": "Тест 3",
+      "blocked": "Дообученная модель Natasha отсутствует (NATASHA_TRAINED!=1)"
+    },
+    "4": {
+      "name": "Тест 4",
+      "blocked": "Нужны и дообученная Natasha, и запущенный GramLynx"
+    }
+  }
+}
