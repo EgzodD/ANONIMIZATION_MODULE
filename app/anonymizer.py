@@ -3,12 +3,16 @@
 Настроен для русского языка с кастомными распознавателями.
 """
 
+import logging
+
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
 from presidio_anonymizer import AnonymizerEngine, DeanonymizeEngine
 from presidio_anonymizer.entities import OperatorConfig
 
 from app.custom_recognizers import ALL_RU_RECOGNIZERS
+
+logger = logging.getLogger(__name__)
 
 # Типы сущностей, которые НЕ надо скрывать (LOCATION по запросу)
 EXCLUDED_ENTITIES = {"LOCATION", "NRP"}
@@ -50,17 +54,56 @@ analyzer_engine = _build_analyzer()
 anonymizer_engine = AnonymizerEngine()
 deanonymizer_engine = DeanonymizeEngine()
 
+# Политика: полный набор типов, которые сервис вообще имеет право скрывать
+# (всё поддерживаемое минус безусловно исключённое). Кастомный параметр запроса
+# может только СУЖАТЬ этот набор (отключать отдельные типы), но не расширять его.
+POLICY_ENTITIES = frozenset(
+    e for e in analyzer_engine.get_supported_entities(language="ru")
+    if e not in EXCLUDED_ENTITIES
+)
 
-def analyze_text(text: str) -> list:
+
+def resolve_disabled_entities(disable_entities) -> frozenset:
+    """
+    Приводит клиентский список отключаемых типов к безопасному множеству.
+
+    Правила безопасности:
+    - можно только СУЖАТЬ: отключить разрешено лишь типы из POLICY_ENTITIES;
+    - неизвестные/запрещённые названия молча игнорируются (безопасное поведение —
+      данные останутся скрытыми), но пишутся в лог как предупреждение;
+    - факт отключения логируется (что именно отключили) для аудита.
+    """
+    if not disable_entities:
+        return frozenset()
+
+    requested = {str(x).strip().upper() for x in disable_entities if str(x).strip()}
+    valid = frozenset(requested & POLICY_ENTITIES)
+    ignored = requested - POLICY_ENTITIES
+
+    if valid:
+        logger.info("Кастомный параметр: отключены типы сущностей: %s", sorted(valid))
+    if ignored:
+        logger.warning(
+            "Кастомный параметр: проигнорированы недопустимые типы (нет в политике): %s",
+            sorted(ignored),
+        )
+    return valid
+
+
+def analyze_text(text: str, disable_entities=None) -> list:
+    disabled = resolve_disabled_entities(disable_entities)
     results = analyzer_engine.analyze(
         text=text,
         language="ru",
     )
-    # Убираем LOCATION и другие исключённые типы
-    return [r for r in results if r.entity_type not in EXCLUDED_ENTITIES]
+    # Убираем LOCATION/исключённые типы, а также отключённые запросом типы
+    return [
+        r for r in results
+        if r.entity_type not in EXCLUDED_ENTITIES and r.entity_type not in disabled
+    ]
 
 
-def anonymize_text(text: str) -> dict:
+def anonymize_text(text: str, disable_entities=None) -> dict:
     if not text or not text.strip():
         return {
             "original": text,
@@ -69,7 +112,7 @@ def anonymize_text(text: str) -> dict:
             "mapping": {},
         }
 
-    results = analyze_text(text)
+    results = analyze_text(text, disable_entities=disable_entities)
 
     if not results:
         return {
@@ -112,7 +155,7 @@ def anonymize_text(text: str) -> dict:
     }
 
 
-def anonymize_json(data, all_entities: list | None = None) -> tuple:
+def anonymize_json(data, all_entities: list | None = None, disable_entities=None) -> tuple:
     """Рекурсивно анонимизирует все строковые значения в dict/list (для jsonb-полей)."""
     if all_entities is None:
         all_entities = []
@@ -121,20 +164,24 @@ def anonymize_json(data, all_entities: list | None = None) -> tuple:
         return None, all_entities
 
     if isinstance(data, str):
-        result = anonymize_text(data)
+        result = anonymize_text(data, disable_entities=disable_entities)
         all_entities.extend(result["entities_found"])
         return result["anonymized"], all_entities
 
     if isinstance(data, dict):
         anonymized_dict = {}
         for key, value in data.items():
-            anonymized_dict[key], all_entities = anonymize_json(value, all_entities)
+            anonymized_dict[key], all_entities = anonymize_json(
+                value, all_entities, disable_entities=disable_entities
+            )
         return anonymized_dict, all_entities
 
     if isinstance(data, list):
         anonymized_list = []
         for item in data:
-            anon_item, all_entities = anonymize_json(item, all_entities)
+            anon_item, all_entities = anonymize_json(
+                item, all_entities, disable_entities=disable_entities
+            )
             anonymized_list.append(anon_item)
         return anonymized_list, all_entities
 

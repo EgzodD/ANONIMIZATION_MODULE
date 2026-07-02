@@ -4,13 +4,27 @@ from datetime import datetime
 
 # --- Request ---
 
+# Общее описание кастомного параметра для всех запросов анонимизации.
+_DISABLE_ENTITIES_DESC = (
+    "Необязательный список типов сущностей, которые НЕ нужно скрывать в этом запросе "
+    "(например [\"DATE_OF_BIRTH\"]). Параметр может только СУЖАТЬ анонимизацию: "
+    "перечисленные типы будут пропущены. Включить типы вне политики сервиса "
+    "(в т.ч. LOCATION/NRP) через него нельзя. Неизвестные названия игнорируются "
+    "(данные останутся скрытыми). Каждое применение логируется."
+)
+
+
 class AnonymizeTextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=50_000, description="Текст для анонимизации")
+    disable_entities: list[str] | None = Field(default=None, description=_DISABLE_ENTITIES_DESC)
 
     model_config = {
         "json_schema_extra": {
             "examples": [
-                {"text": "Меня зовут Иван Петров, мой телефон +7 999 123 45 67, email ivan@mail.ru"}
+                {
+                    "text": "Меня зовут Иван Петров, мой телефон +7 999 123 45 67, email ivan@mail.ru",
+                    "disable_entities": ["DATE_OF_BIRTH"],
+                }
             ]
         }
     }
@@ -18,10 +32,12 @@ class AnonymizeTextRequest(BaseModel):
 
 class AnonymizeConversationRequest(BaseModel):
     conversation_id: int = Field(..., description="ID записи в таблице conversations")
+    disable_entities: list[str] | None = Field(default=None, description=_DISABLE_ENTITIES_DESC)
 
 
 class AnonymizeBatchRequest(BaseModel):
     conversation_ids: list[int] = Field(..., min_length=1, max_length=100, description="Список ID записей")
+    disable_entities: list[str] | None = Field(default=None, description=_DISABLE_ENTITIES_DESC)
 
 
 # --- Response ---

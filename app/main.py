@@ -52,6 +52,17 @@ app = FastAPI(
         "- DATE_OF_BIRTH — дата рождения\n"
         "- CREDIT_CARD — номера карт\n\n"
         "**Не скрывается:** LOCATION (локация/адрес)\n\n"
+        "**Кастомные параметры запроса:**\n"
+        "- `disable_entities` — список типов, которые НЕ скрывать в этом запросе "
+        "(например `[\"DATE_OF_BIRTH\"]`). Доступен в `/anonymize/text`, "
+        "`/anonymize/conversation`, `/anonymize/batch`.\n"
+        "  - Работает только на **сужение**: перечисленные типы пропускаются, "
+        "включить запрещённые (LOCATION/NRP) или отсутствующие в политике типы нельзя.\n"
+        "  - Неизвестные названия игнорируются (данные останутся скрытыми), "
+        "каждое применение пишется в лог для аудита.\n"
+        "  - Если значение ловится несколькими распознавателями (напр. дата — "
+        "`DATE_OF_BIRTH` и `DATE_TIME`), чтобы не скрывать его, нужно отключить "
+        "**все** такие типы.\n\n"
         "**Аутентификация:** X-API-Key header (если задан API_KEY в env)"
     ),
     version="2.0.0",
@@ -69,7 +80,9 @@ def require_api_key(api_key: str | None = Depends(_api_key_header)):
 
 # ─── Вспомогательные функции анонимизации ─────────────────────────────────
 
-def _anonymize_contact(db: Session, contact_id: int | None) -> ContactAnonymized | None:
+def _anonymize_contact(
+    db: Session, contact_id: int | None, disable_entities=None
+) -> ContactAnonymized | None:
     if not contact_id:
         return None
 
@@ -81,32 +94,32 @@ def _anonymize_contact(db: Session, contact_id: int | None) -> ContactAnonymized
 
     name_anon = None
     if contact.name:
-        res = anonymize_text(contact.name)
+        res = anonymize_text(contact.name, disable_entities=disable_entities)
         name_anon = res["anonymized"]
         all_entities.extend(res["entities_found"])
 
     email_anon = None
     if contact.email:
-        res = anonymize_text(contact.email)
+        res = anonymize_text(contact.email, disable_entities=disable_entities)
         email_anon = res["anonymized"]
         all_entities.extend(res["entities_found"])
 
     phone_anon = None
     if contact.phone:
-        res = anonymize_text(contact.phone)
+        res = anonymize_text(contact.phone, disable_entities=disable_entities)
         phone_anon = res["anonymized"]
         all_entities.extend(res["entities_found"])
 
     additional_anon = None
     if contact.additional_attributes:
         additional_anon, all_entities = anonymize_json(
-            contact.additional_attributes, all_entities
+            contact.additional_attributes, all_entities, disable_entities=disable_entities
         )
 
     custom_anon = None
     if contact.custom_attributes:
         custom_anon, all_entities = anonymize_json(
-            contact.custom_attributes, all_entities
+            contact.custom_attributes, all_entities, disable_entities=disable_entities
         )
 
     return ContactAnonymized(
@@ -123,7 +136,7 @@ def _anonymize_contact(db: Session, contact_id: int | None) -> ContactAnonymized
     )
 
 
-def _anonymize_messages(messages: list) -> list[MessageAnonymized]:
+def _anonymize_messages(messages: list, disable_entities=None) -> list[MessageAnonymized]:
     """Анонимизирует список сообщений. Принимает уже загруженные ORM-объекты."""
     results = []
     for msg in sorted(messages, key=lambda m: m.created_at or datetime.min):
@@ -131,14 +144,14 @@ def _anonymize_messages(messages: list) -> list[MessageAnonymized]:
 
         content_anon = None
         if msg.content:
-            res = anonymize_text(msg.content)
+            res = anonymize_text(msg.content, disable_entities=disable_entities)
             content_anon = res["anonymized"]
             all_entities.extend(res["entities_found"])
 
         content_attrs_anon = None
         if msg.content_attributes:
             content_attrs_anon, all_entities = anonymize_json(
-                msg.content_attributes, all_entities
+                msg.content_attributes, all_entities, disable_entities=disable_entities
             )
 
         results.append(
@@ -157,33 +170,35 @@ def _anonymize_messages(messages: list) -> list[MessageAnonymized]:
     return results
 
 
-def _anonymize_conversation(conv: Conversation, db: Session) -> ConversationResponse:
+def _anonymize_conversation(
+    conv: Conversation, db: Session, disable_entities=None
+) -> ConversationResponse:
     all_entities = []
 
     identifier_anon = None
     if conv.identifier:
-        res = anonymize_text(conv.identifier)
+        res = anonymize_text(conv.identifier, disable_entities=disable_entities)
         identifier_anon = res["anonymized"]
         all_entities.extend(res["entities_found"])
 
     additional_anon = None
     if conv.additional_attributes:
         additional_anon, all_entities = anonymize_json(
-            conv.additional_attributes, all_entities
+            conv.additional_attributes, all_entities, disable_entities=disable_entities
         )
 
     custom_anon = None
     if conv.custom_attributes:
         custom_anon, all_entities = anonymize_json(
-            conv.custom_attributes, all_entities
+            conv.custom_attributes, all_entities, disable_entities=disable_entities
         )
 
-    contact_result = _anonymize_contact(db, conv.contact_id)
+    contact_result = _anonymize_contact(db, conv.contact_id, disable_entities=disable_entities)
     if contact_result:
         all_entities.extend(contact_result.entities_found)
 
     # Используем уже загруженные через selectinload сообщения
-    messages_result = _anonymize_messages(conv.messages)
+    messages_result = _anonymize_messages(conv.messages, disable_entities=disable_entities)
     for msg in messages_result:
         all_entities.extend(msg.entities_found)
 
@@ -231,8 +246,12 @@ def health_check(db: Session = Depends(get_db)):
     dependencies=[Depends(require_api_key)],
 )
 def anonymize_free_text(request: AnonymizeTextRequest):
-    """Анонимизация произвольного текста. Принимает текст, возвращает анонимизированный + маппинг."""
-    result = anonymize_text(request.text)
+    """Анонимизация произвольного текста. Принимает текст, возвращает анонимизированный + маппинг.
+
+    Необязательный `disable_entities` позволяет пропустить отдельные типы сущностей
+    (только сужение политики, см. описание поля).
+    """
+    result = anonymize_text(request.text, disable_entities=request.disable_entities)
     return AnonymizeTextResponse(**result)
 
 
@@ -261,7 +280,7 @@ def anonymize_conversation(
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    return _anonymize_conversation(conv, db)
+    return _anonymize_conversation(conv, db, disable_entities=request.disable_entities)
 
 
 @app.post(
@@ -282,7 +301,10 @@ def anonymize_batch(
         .all()
     )
 
-    results = [_anonymize_conversation(conv, db) for conv in conversations]
+    results = [
+        _anonymize_conversation(conv, db, disable_entities=request.disable_entities)
+        for conv in conversations
+    ]
 
     return BatchResponse(
         total=len(request.conversation_ids),
