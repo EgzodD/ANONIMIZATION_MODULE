@@ -224,6 +224,21 @@ class NatashaPersonRecognizer(EntityRecognizer):
 natasha_person_recognizer = NatashaPersonRecognizer()
 
 
+# Выбор распознавателя PERSON:
+#   - если задана обученная ruBERT-модель (env PERSON_MODEL_DIR) — используем её
+#     (это «обученная Natasha» для Тестов 3/4);
+#   - иначе стоковая Natasha (NewsNERTagger) — поведение по умолчанию.
+from app.person_transformer_recognizer import (
+    PersonTransformerRecognizer,
+    person_model_available,
+)
+
+if person_model_available():
+    _person_recognizer = PersonTransformerRecognizer()
+else:
+    _person_recognizer = natasha_person_recognizer
+
+
 ALL_RU_RECOGNIZERS = [
     ru_phone_recognizer,
     ru_inn_recognizer,
@@ -232,5 +247,5 @@ ALL_RU_RECOGNIZERS = [
     ru_email_recognizer,
     ru_date_of_birth_recognizer,
     ru_card_number_recognizer,
-    natasha_person_recognizer,
+    _person_recognizer,
 ]

@@ -239,7 +239,14 @@ def main():
     cells = set(args.cells.split(","))
     do_time = not args.no_time
 
-    trained = os.environ.get("NATASHA_TRAINED") == "1"
+    # "Обучено" = реально доступна дообученная модель PERSON (а не просто флаг).
+    # Флаг NATASHA_TRAINED сам по себе модель не подменяет, поэтому им доверять нельзя:
+    # Тесты 3/4 считаются валидными только если по PERSON_MODEL_DIR лежит модель.
+    try:
+        from app.person_transformer_recognizer import person_model_available
+        trained = person_model_available()
+    except Exception:
+        trained = False
     results = {"dataset": os.path.relpath(TEST_PATH, PROJ), "n": len(examples), "cells": {}}
 
     # Тест 1 — база
@@ -257,7 +264,7 @@ def main():
     # Тест 3 — дообученная Natasha
     if "3" in cells:
         if not trained:
-            results["cells"]["3"] = {"name": "Тест 3", "blocked": "Дообученная модель Natasha отсутствует (NATASHA_TRAINED!=1)"}
+            results["cells"]["3"] = {"name": "Тест 3", "blocked": "Дообученная модель PERSON отсутствует (PERSON_MODEL_DIR не задан или пуст)"}
             print("\nТест 3: ЗАБЛОКИРОВАН — нет дообученной Natasha")
         else:
             results["cells"]["3"] = run_cell("Тест 3 (prep off, train on)",
