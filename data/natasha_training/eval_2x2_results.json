@@ -174,17 +174,31 @@
         }
       },
       "timing": {
-        "ms_per_text_median": 11.77,
-        "ms_per_text_mean": 12.39,
-        "ms_per_text_std": 1.43,
-        "throughput_per_sec": 85.0,
+        "ms_per_text_median": 24.28,
+        "ms_per_text_mean": 25.78,
+        "ms_per_text_std": 3.49,
+        "throughput_per_sec": 41.2,
         "repeats_K": 5,
         "warmup": 1
       }
     },
     "2": {
-      "name": "Тест 2",
-      "blocked": "GRAMLYNX_URL не задан — сервис GramLynx не запущен"
+      "name": "Тест 2 (prep on, train off)",
+      "prep": true,
+      "n_examples": 150,
+      "leak_total": 318,
+      "leak_leaked": 3,
+      "leak_rate_pct": 0.94,
+      "value_recall_pct": 99.06,
+      "span_valid": false,
+      "timing": {
+        "ms_per_text_median": 106.2,
+        "ms_per_text_mean": 113.42,
+        "ms_per_text_std": 17.29,
+        "throughput_per_sec": 9.4,
+        "repeats_K": 5,
+        "warmup": 1
+      }
     },
     "3": {
       "name": "Тест 3",
