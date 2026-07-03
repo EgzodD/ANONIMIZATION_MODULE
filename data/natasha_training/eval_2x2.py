@@ -26,6 +26,7 @@ import os
 import sys
 import time
 import argparse
+import difflib
 import statistics
 import urllib.request
 from collections import Counter, defaultdict
@@ -84,12 +85,47 @@ def overlap(a, b):
     return not (a[1] <= b[0] or b[1] <= a[0])
 
 
+# ── КОСТЫЛЬ: выравнивание gold-координат на текст после предобработки ──────
+# Разметка (gold) сделана по ОРИГИНАЛУ. GramLynx переписывает текст и сдвигает
+# позиции, из-за чего span-метрики для prep-on ячеек напрямую невалидны.
+# Ниже — ЭВРИСТИЧЕСКОЕ отображение позиций оригинал->исправленный через
+# difflib. Для НЕизменённых участков отображение точное; для изменённых
+# (replace/insert/delete) позиция приближается к началу изменённого блока.
+# Поэтому STRICT для prep-on считать осторожно (границы приблизительные),
+# показательнее RELAXED (пересечение) и LeakRate. Это временное решение,
+# честный путь — повторная разметка уже исправленного текста.
+def build_char_map(orig, corrected):
+    """orig-индекс -> corrected-индекс. Длина len(orig)+1 (включая конец)."""
+    cmap = [None] * (len(orig) + 1)
+    sm = difflib.SequenceMatcher(None, orig, corrected, autojunk=False)
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "equal":
+            for k in range(i2 - i1):
+                cmap[i1 + k] = j1 + k
+        else:
+            # изменённый участок: схлопываем к началу соответствующего блока
+            for k in range(i1, i2):
+                cmap[k] = j1
+    cmap[len(orig)] = len(corrected)
+    return cmap
+
+
+def map_span(cmap, s, e, corrected_len):
+    """Переносит (s, e) из оригинала в координаты исправленного текста."""
+    ns = cmap[s] if s < len(cmap) and cmap[s] is not None else 0
+    ne = cmap[e] if e < len(cmap) and cmap[e] is not None else corrected_len
+    if ne < ns:
+        ne = ns
+    return ns, ne
+
+
 def eval_quality(examples, apply_prep):
     """Считает per-type TP/FP/FN (strict и relaxed) + LeakRate.
 
-    ВАЖНО: при apply_prep=True текст меняется, координаты gold сдвигаются —
-    span-level метрики некорректны, поэтому в этом режиме основной показатель
-    LeakRate (по значению), а span-level помечается как invalid."""
+    Span-метрики считаются ВСЕГДА. При apply_prep=True gold-координаты
+    выравниваются на исправленный текст эвристикой build_char_map (см. КОСТЫЛЬ
+    выше): STRICT в этом режиме приблизительный (границы), RELAXED и LeakRate —
+    надёжные. Флаг span_aligned помечает, что span-метрики получены выравниванием."""
     strict = defaultdict(Counter)   # type -> tp/fp/fn
     relaxed = defaultdict(Counter)
     leak_total = 0
@@ -102,32 +138,38 @@ def eval_quality(examples, apply_prep):
         text = gramlynx_correct(orig) if apply_prep else orig
         pred, anon = predict(text)
 
-        if not apply_prep:
-            # ── span-level (валидно только без предобработки) ──
-            used_s, used_r = set(), set()
-            for gt, gs, ge in gold:
-                # strict: точные границы + тип
-                si = next((i for i, (pt, ps, pe) in enumerate(pred)
-                           if pt == gt and ps == gs and pe == ge and i not in used_s), None)
-                if si is not None:
-                    strict[gt]["tp"] += 1; used_s.add(si)
-                else:
-                    strict[gt]["fn"] += 1
-                # relaxed: пересечение + тип
-                ri = next((i for i, (pt, ps, pe) in enumerate(pred)
-                           if pt == gt and overlap((gs, ge), (ps, pe)) and i not in used_r), None)
-                if ri is not None:
-                    relaxed[gt]["tp"] += 1; used_r.add(ri)
-                else:
-                    relaxed[gt]["fn"] += 1
-            # FP: предсказания без совпадения по типу+границам / типу+пересечению
-            for i, (pt, ps, pe) in enumerate(pred):
-                if i not in used_s:
-                    strict[pt]["fp"] += 1
-                if i not in used_r:
-                    relaxed[pt]["fp"] += 1
+        # ── gold в координатах текста, по которому шло предсказание ──
+        if apply_prep:
+            cmap = build_char_map(orig, text)
+            gold_eval = [(t, *map_span(cmap, s, e, len(text))) for (t, s, e) in gold]
+        else:
+            gold_eval = gold
 
-        # ── LeakRate (валидно всегда, в т.ч. с предобработкой) ──
+        # ── span-level ──
+        used_s, used_r = set(), set()
+        for gt, gs, ge in gold_eval:
+            # strict: точные границы + тип
+            si = next((i for i, (pt, ps, pe) in enumerate(pred)
+                       if pt == gt and ps == gs and pe == ge and i not in used_s), None)
+            if si is not None:
+                strict[gt]["tp"] += 1; used_s.add(si)
+            else:
+                strict[gt]["fn"] += 1
+            # relaxed: пересечение + тип
+            ri = next((i for i, (pt, ps, pe) in enumerate(pred)
+                       if pt == gt and overlap((gs, ge), (ps, pe)) and i not in used_r), None)
+            if ri is not None:
+                relaxed[gt]["tp"] += 1; used_r.add(ri)
+            else:
+                relaxed[gt]["fn"] += 1
+        # FP: предсказания без совпадения по типу+границам / типу+пересечению
+        for i, (pt, ps, pe) in enumerate(pred):
+            if i not in used_s:
+                strict[pt]["fp"] += 1
+            if i not in used_r:
+                relaxed[pt]["fp"] += 1
+
+        # ── LeakRate (по ОРИГИНАЛЬНОМУ значению, валидно всегда) ──
         for gt, gs, ge in gold:
             value = orig[gs:ge].strip()
             if not value:
@@ -142,7 +184,8 @@ def eval_quality(examples, apply_prep):
         "relaxed": {t: dict(relaxed[t]) for t in relaxed},
         "leak_total": leak_total,
         "leak_leaked": leak_leaked,
-        "span_valid": not apply_prep,
+        "span_valid": True,
+        "span_aligned": apply_prep,  # True = span-метрики через КОСТЫЛЬ-выравнивание
     }
 
 
@@ -211,13 +254,15 @@ def run_cell(name, examples, apply_prep, K, warmup, do_time):
         "leak_rate_pct": round(q["leak_leaked"] / q["leak_total"] * 100, 2) if q["leak_total"] else 0.0,
         "value_recall_pct": round((1 - q["leak_leaked"] / q["leak_total"]) * 100, 2) if q["leak_total"] else 0.0,
         "span_valid": q["span_valid"],
+        "span_aligned": q["span_aligned"],  # True = координаты выровнены эвристикой (КОСТЫЛЬ)
     }
     if q["span_valid"]:
         result["strict"] = aggregate(q["strict"])
         result["relaxed"] = aggregate(q["relaxed"])
         s, r = result["strict"], result["relaxed"]
-        print(f"  STRICT  micro: P={s['micro']['P']}  R={s['micro']['R']}  F2={s['micro']['F2']}")
-        print(f"  RELAXED micro: P={r['micro']['P']}  R={r['micro']['R']}  F2={r['micro']['F2']}")
+        tag = "  [выровнено, приблизит.]" if q["span_aligned"] else ""
+        print(f"  STRICT  micro: P={s['micro']['P']}  R={s['micro']['R']}  F2={s['micro']['F2']}{tag}")
+        print(f"  RELAXED micro: P={r['micro']['P']}  R={r['micro']['R']}  F2={r['micro']['F2']}{tag}")
     print(f"  LeakRate = {result['leak_rate_pct']}%  (утечек {q['leak_leaked']}/{q['leak_total']}),"
           f"  value-Recall = {result['value_recall_pct']}%")
     if do_time:

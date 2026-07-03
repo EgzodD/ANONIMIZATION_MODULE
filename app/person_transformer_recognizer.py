@@ -22,10 +22,14 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 # Путь к дообученной модели (папка с config.json/pytorch_model.bin или safetensors).
-# Приоритет: реальная env-переменная PERSON_MODEL_DIR (Docker/скрипты оценки) ->
+# Приоритет: env-переменная PERSON_MODEL_DIR (Docker/скрипты оценки) ->
 # значение из .env через pydantic settings (постоянная конфигурация сервиса).
+# Если env-переменная ЗАДАНА (даже пустой строкой) — она перебивает .env.
+# Пустая строка => модель принудительно отключена (стоковая Natasha) — это нужно,
+# например, для честной оценки базовой линии, когда путь прописан в .env.
+_env_model_dir = os.environ.get("PERSON_MODEL_DIR")
 PERSON_MODEL_DIR = (
-    os.environ.get("PERSON_MODEL_DIR") or settings.person_model_dir or ""
+    _env_model_dir if _env_model_dir is not None else settings.person_model_dir
 ).strip()
 
 

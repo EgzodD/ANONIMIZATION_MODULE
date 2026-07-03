@@ -11,6 +11,7 @@
       "leak_rate_pct": 0.94,
       "value_recall_pct": 99.06,
       "span_valid": true,
+      "span_aligned": false,
       "strict": {
         "per_type": {
           "PERSON": {
@@ -174,10 +175,10 @@
         }
       },
       "timing": {
-        "ms_per_text_median": 12.19,
-        "ms_per_text_mean": 12.55,
-        "ms_per_text_std": 0.95,
-        "throughput_per_sec": 82.1,
+        "ms_per_text_median": 9.84,
+        "ms_per_text_mean": 9.79,
+        "ms_per_text_std": 0.18,
+        "throughput_per_sec": 101.6,
         "repeats_K": 5,
         "warmup": 1
       }
@@ -190,12 +191,175 @@
       "leak_leaked": 3,
       "leak_rate_pct": 0.94,
       "value_recall_pct": 99.06,
-      "span_valid": false,
+      "span_valid": true,
+      "span_aligned": true,
+      "strict": {
+        "per_type": {
+          "PERSON": {
+            "tp": 119,
+            "fp": 19,
+            "fn": 13,
+            "P": 86.2,
+            "R": 90.2,
+            "F2": 89.3
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 77.0,
+          "R": 95.9,
+          "F2": 91.4,
+          "tp": 305,
+          "fp": 91,
+          "fn": 13
+        },
+        "macro": {
+          "P": 79.9,
+          "R": 98.8,
+          "F2": 92.4
+        }
+      },
+      "relaxed": {
+        "per_type": {
+          "PERSON": {
+            "tp": 129,
+            "fp": 9,
+            "fn": 3,
+            "P": 93.5,
+            "R": 97.7,
+            "F2": 96.8
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 79.5,
+          "R": 99.1,
+          "F2": 94.4,
+          "tp": 315,
+          "fp": 81,
+          "fn": 3
+        },
+        "macro": {
+          "P": 80.8,
+          "R": 99.7,
+          "F2": 93.4
+        }
+      },
       "timing": {
-        "ms_per_text_median": 61.3,
-        "ms_per_text_mean": 61.42,
-        "ms_per_text_std": 1.21,
-        "throughput_per_sec": 16.3,
+        "ms_per_text_median": 57.13,
+        "ms_per_text_mean": 57.98,
+        "ms_per_text_std": 2.11,
+        "throughput_per_sec": 17.5,
         "repeats_K": 5,
         "warmup": 1
       }
@@ -209,6 +373,7 @@
       "leak_rate_pct": 0.0,
       "value_recall_pct": 100.0,
       "span_valid": true,
+      "span_aligned": false,
       "strict": {
         "per_type": {
           "PERSON": {
@@ -372,10 +537,10 @@
         }
       },
       "timing": {
-        "ms_per_text_median": 11.3,
-        "ms_per_text_mean": 11.31,
-        "ms_per_text_std": 0.08,
-        "throughput_per_sec": 88.5,
+        "ms_per_text_median": 11.13,
+        "ms_per_text_mean": 11.13,
+        "ms_per_text_std": 0.1,
+        "throughput_per_sec": 89.8,
         "repeats_K": 5,
         "warmup": 1
       }
@@ -388,16 +553,179 @@
       "leak_leaked": 0,
       "leak_rate_pct": 0.0,
       "value_recall_pct": 100.0,
-      "span_valid": false,
+      "span_valid": true,
+      "span_aligned": true,
+      "strict": {
+        "per_type": {
+          "PERSON": {
+            "tp": 131,
+            "fp": 1,
+            "fn": 1,
+            "P": 99.2,
+            "R": 99.2,
+            "F2": 99.2
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 81.3,
+          "R": 99.7,
+          "F2": 95.4,
+          "tp": 317,
+          "fp": 73,
+          "fn": 1
+        },
+        "macro": {
+          "P": 81.5,
+          "R": 99.9,
+          "F2": 93.7
+        }
+      },
+      "relaxed": {
+        "per_type": {
+          "PERSON": {
+            "tp": 132,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PHONE_NUMBER": {
+            "tp": 51,
+            "fp": 31,
+            "fn": 0,
+            "P": 62.2,
+            "R": 100.0,
+            "F2": 89.2
+          },
+          "EMAIL_ADDRESS": {
+            "tp": 44,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "INN": {
+            "tp": 23,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "SNILS": {
+            "tp": 19,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          },
+          "PASSPORT": {
+            "tp": 9,
+            "fp": 13,
+            "fn": 0,
+            "P": 40.9,
+            "R": 100.0,
+            "F2": 77.6
+          },
+          "DATE_OF_BIRTH": {
+            "tp": 28,
+            "fp": 28,
+            "fn": 0,
+            "P": 50.0,
+            "R": 100.0,
+            "F2": 83.3
+          },
+          "CREDIT_CARD": {
+            "tp": 12,
+            "fp": 0,
+            "fn": 0,
+            "P": 100.0,
+            "R": 100.0,
+            "F2": 100.0
+          }
+        },
+        "micro": {
+          "P": 81.5,
+          "R": 100.0,
+          "F2": 95.7,
+          "tp": 318,
+          "fp": 72,
+          "fn": 0
+        },
+        "macro": {
+          "P": 81.6,
+          "R": 100.0,
+          "F2": 93.8
+        }
+      },
       "timing": {
-        "ms_per_text_median": 55.51,
-        "ms_per_text_mean": 55.57,
-        "ms_per_text_std": 0.23,
-        "throughput_per_sec": 18.0,
+        "ms_per_text_median": 54.11,
+        "ms_per_text_mean": 54.73,
+        "ms_per_text_std": 1.38,
+        "throughput_per_sec": 18.5,
         "repeats_K": 5,
         "warmup": 1
       }
     }
   },
-  "note": "СРАВНЕНИЕ моделей. Тесты 1/2 — стоковая Natasha (NewsNERTagger, предобучена на новостях, без доменного дообучения). Тесты 3/4 — дообученный ruBERT. Разные процессы, т.к. распознаватель выбирается один раз при импорте. Показывает эффект смены модели: LeakRate 0.94% (Natasha) -> 0.0% (ruBERT). Продакшен-прогон (весь модуль на ruBERT) — в eval_2x2_results.json"
+  "note": "СРАВНЕНИЕ моделей. Тесты 1/2 — стоковая Natasha (без доменного дообучения); Тесты 3/4 — дообученный ruBERT. Разные процессы. span_aligned=true в prep-on ячейках (2/4): span-метрики получены ЭВРИСТИЧЕСКИМ выравниванием координат (КОСТЫЛЬ), STRICT приблизителен, надёжнее RELAXED и LeakRate. Продакшен-прогон — eval_2x2_results.json"
 }
