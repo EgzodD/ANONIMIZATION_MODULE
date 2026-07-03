@@ -17,10 +17,16 @@ import logging
 
 from presidio_analyzer import EntityRecognizer, RecognizerResult
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 # Путь к дообученной модели (папка с config.json/pytorch_model.bin или safetensors).
-PERSON_MODEL_DIR = os.environ.get("PERSON_MODEL_DIR", "").strip()
+# Приоритет: реальная env-переменная PERSON_MODEL_DIR (Docker/скрипты оценки) ->
+# значение из .env через pydantic settings (постоянная конфигурация сервиса).
+PERSON_MODEL_DIR = (
+    os.environ.get("PERSON_MODEL_DIR") or settings.person_model_dir or ""
+).strip()
 
 
 def person_model_available() -> bool:
