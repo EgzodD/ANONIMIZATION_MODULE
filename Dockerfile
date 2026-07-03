@@ -9,6 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --timeout=300 --retries=5 -r requirements.txt
 
+# Дообученная модель PERSON (ruBERT) — transformers + CPU-torch.
+# Ставим CPU-сборку torch (лёгкая ~190МБ) вместо дефолтной CUDA-сборки (~2ГБ).
+RUN pip install --no-cache-dir --timeout=600 --retries=5 \
+    "transformers>=4.40" torch \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple
+
 RUN python -m spacy download ru_core_news_lg --timeout=300
 
 RUN python -c "\

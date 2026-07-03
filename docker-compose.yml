@@ -18,6 +18,10 @@ services:
     ports:
       - "8000:8000"
     env_file: .env
+    environment:
+      # Путь к модели ВНУТРИ контейнера (переопределяет хостовый путь из .env).
+      # models/person_ruBERT попадает в образ через COPY . . (см. Dockerfile).
+      - PERSON_MODEL_DIR=/app/models/person_ruBERT
     depends_on:
       db:
         condition: service_healthy

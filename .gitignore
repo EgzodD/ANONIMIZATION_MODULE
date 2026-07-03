@@ -183,6 +183,10 @@ __marimo__/
 # Docker
 .docker/
 
+# ML-модели (большие бинарники — хранятся вне git)
+/models/
+tests/person_ruBERT.zip
+
 # OS
 .DS_Store
 Thumbs.db
