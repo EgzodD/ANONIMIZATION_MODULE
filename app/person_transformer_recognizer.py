@@ -34,14 +34,16 @@ class PersonTransformerRecognizer(EntityRecognizer):
     """PERSON на дообученном ruBERT. Возвращает символьные спаны для Presidio."""
 
     def __init__(self, model_dir: str | None = None, default_score: float = 0.85):
+        # Атрибуты ставим ДО super().__init__: в новых версиях presidio
+        # EntityRecognizer.__init__ сам вызывает self.load(), которому нужен model_dir.
+        self.model_dir = (model_dir or PERSON_MODEL_DIR).strip()
+        self.default_score = default_score
+        self._pipe = None
         super().__init__(
             supported_entities=["PERSON"],
             supported_language="ru",
             name="PersonTransformerRecognizer",
         )
-        self.model_dir = (model_dir or PERSON_MODEL_DIR).strip()
-        self.default_score = default_score
-        self._pipe = None
 
     def load(self) -> None:
         if not self.model_dir or not os.path.isfile(
