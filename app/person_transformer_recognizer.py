@@ -102,7 +102,10 @@ class PersonTransformerRecognizer(EntityRecognizer):
         results = []
         for ent in self._pipe(text):
             group = ent.get("entity_group") or ent.get("entity") or ""
-            if group.endswith("PERSON"):
+            # Разные схемы меток: наши дообученные модели дают PERSON, публичные
+            # русские ru-NER (для сравнительных прогонов) — PER/B-PER. Оба -> PERSON.
+            tail = group.rsplit("-", 1)[-1].upper()
+            if tail in ("PERSON", "PER"):
                 results.append(
                     RecognizerResult(
                         entity_type="PERSON",
