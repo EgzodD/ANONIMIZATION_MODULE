@@ -2,7 +2,11 @@
 
 Микросервис анонимизации персональных данных в русскоязычных текстах.
 Использует Microsoft Presidio + кастомные распознаватели для русского языка.
-Интегрируется с Chatwoot через webhook — не требует изменений в основном проекте.
+
+**Самостоятельный сервис.** Ядро (обезличивание текста через `/anonymize/text`)
+работает автономно и не требует БД. Интеграция с Chatwoot — **опциональная**,
+включается флагом `CHATWOOT_ENABLED=true` и добавляет эндпоинты для работы
+с базой Chatwoot (conversation/batch) и webhook. По умолчанию флаг выключен.
 
 ---
 
@@ -17,30 +21,44 @@ cd your-repo
 
 ## 2. Настройка переменных окружения
 
-Скопируйте файл с примером и заполните данные подключения к БД:
-
 ```bash
 cp .env.example .env
 ```
 
-Откройте `.env` и укажите параметры вашей БД Chatwoot:
+Сервис работает в двух режимах. Что заполнять в `.env` — зависит от режима.
+
+### Режим A. Автономный (по умолчанию) — обезличивание текста
+
+Подключение к БД и Chatwoot не нужно. Достаточно:
 
 ```env
+CHATWOOT_ENABLED=false          # можно не указывать — это значение по умолчанию
+API_KEY=<длинный_случайный_ключ>  # защита эндпоинтов; пусто = без аутентификации (только для разработки)
+PERSON_MODEL_DIR=/app/models/person_ruBERT  # модель ФИО; пусто = стоковая Natasha
+```
+
+`DATABASE_URL` и `CHATWOOT_WEBHOOK_SECRET` в этом режиме не требуются.
+
+### Режим B. С интеграцией Chatwoot
+
+Добавляются параметры БД. `DATABASE_URL` обязателен — без него сервис не
+стартует (fail-fast).
+
+```env
+CHATWOOT_ENABLED=true
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DB_NAME
+CHATWOOT_WEBHOOK_SECRET=<секрет_из_chatwoot>   # желателен на проде; пусто = проверка подписи выключена
+API_KEY=<ключ>
+PERSON_MODEL_DIR=/app/models/person_ruBERT
 ```
 
 | Параметр | Описание | Пример |
 |----------|----------|--------|
 | USER | Имя пользователя PostgreSQL | `chatwoot` |
 | PASSWORD | Пароль | `secret123` |
-| HOST | Хост БД | `localhost` или `192.168.1.100` или `chatwoot-db` |
+| HOST | Хост БД | `localhost` / `192.168.1.100` / `chatwoot-db` |
 | PORT | Порт PostgreSQL | `5432` |
 | DB_NAME | Имя базы данных | `chatwoot_production` |
-
-Пример для локальной БД:
-```env
-DATABASE_URL=postgresql://chatwoot:secret123@localhost:5432/chatwoot_production
-```
 
 Пример для БД в Docker-сети:
 ```env
@@ -51,10 +69,21 @@ DATABASE_URL=postgresql://chatwoot:secret123@chatwoot-db:5432/chatwoot_productio
 
 ## 3. Запуск через Docker
 
-### Вариант A: Подключение к существующей БД Chatwoot (продакшн)
+### Вариант A: Автономный режим (по умолчанию)
 
-Сервису нужна только сама БД — он подключается к ней напрямую.
-Убедитесь, что `.env` заполнен (шаг 2), затем:
+БД не нужна. `.env` — как в Режиме A (шаг 2). Поднимается один контейнер:
+
+```bash
+docker compose up --build -d
+```
+
+Сервис `db` в `docker-compose.yml` по умолчанию закомментирован — он нужен
+только для интеграции с Chatwoot (Вариант C).
+
+### Вариант B: Подключение к существующей БД Chatwoot (продакшн)
+
+`.env` — как в Режиме B (`CHATWOOT_ENABLED=true` + `DATABASE_URL`). Сервис
+подключается к базе Chatwoot напрямую:
 
 ```bash
 docker compose up --build -d
@@ -86,23 +115,18 @@ networks:
 docker network ls
 ```
 
-### Вариант B: Локальная разработка с тестовой БД
+### Вариант C: Локальная разработка с тестовой БД
 
-Для тестирования без настоящей БД Chatwoot. Поднимается свой PostgreSQL
-с тестовыми данными (3 контакта, 3 разговора, 6 сообщений):
-
-Для этого варианта измените `docker-compose.yml` — раскомментируйте сервис `db`:
+Для тестирования интеграции без настоящей БД Chatwoot. Поднимается свой
+PostgreSQL с тестовыми данными (3 контакта, 3 разговора, 6 сообщений).
+Раскомментируйте сервис `db` и `depends_on` в `docker-compose.yml`. Порт
+Postgres наружу не публикуется — доступ только внутри Docker-сети:
 
 ```yaml
 services:
   db:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: conversations_db
-    ports:
-      - "5432:5432"
+    env_file: .env
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -112,6 +136,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      CHATWOOT_ENABLED: "true"
       DATABASE_URL: postgresql://user:password@db:5432/conversations_db
     depends_on:
       - db
@@ -140,9 +165,15 @@ curl http://localhost:8000/health
 {
   "status": "ok",
   "analyzer_ready": true,
+  "chatwoot_enabled": false,
+  "db_connected": null,
   "supported_entities": ["CREDIT_CARD", "DATE_OF_BIRTH", "EMAIL_ADDRESS", "INN", "PASSPORT", "PERSON", "PHONE_NUMBER", "SNILS"]
 }
 ```
+
+`db_connected` равен `null` в автономном режиме (БД не используется). При
+`CHATWOOT_ENABLED=true` поле показывает `true`/`false` по состоянию базы, а
+`status` становится `degraded`, если база недоступна.
 
 Swagger UI (интерактивная документация API):
 ```
@@ -368,12 +399,18 @@ python -m pytest tests/ -v
 ```
 realization/
 ├── app/
-│   ├── main.py               # FastAPI-приложение, эндпоинты API + webhook
-│   ├── config.py              # Настройки из .env (DATABASE_URL)
-│   ├── models.py              # Pydantic-схемы запросов и ответов
-│   ├── database.py            # SQLAlchemy-модели (conversations, messages, contacts)
+│   ├── main.py               # FastAPI-приложение, ядро: /health, /anonymize/text
+│   ├── auth.py                # Проверка API-ключа (общая)
+│   ├── config.py              # Настройки из .env (CHATWOOT_ENABLED, DATABASE_URL, ...)
+│   ├── models.py              # Pydantic-схемы ядра
 │   ├── anonymizer.py          # Логика анонимизации (Presidio + кастомные распознаватели)
-│   └── custom_recognizers.py  # Regex-распознаватели для русских ПДн
+│   ├── custom_recognizers.py  # Regex-распознаватели для русских ПДн
+│   └── integrations/
+│       └── chatwoot/          # Опциональный адаптер Chatwoot (за CHATWOOT_ENABLED)
+│           ├── database.py    #   SQLAlchemy-модели + ленивое подключение к БД
+│           ├── schemas.py     #   Pydantic-схемы Chatwoot
+│           ├── service.py     #   Обход conversation → messages → contacts
+│           └── router.py      #   Эндпоинты /anonymize/conversation, /batch, /webhook
 ├── data/
 │   └── ru_training_data.csv   # Датасет для тестирования качества распознавания
 ├── tests/

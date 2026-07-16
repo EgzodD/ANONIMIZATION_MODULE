@@ -82,91 +82,18 @@ class TestAnonymizeTextEndpoint:
             assert "value" in entity
 
 
-class TestWebhookEndpoint:
-    def test_webhook_message_created(self, client):
-        payload = {
-            "event": "message_created",
-            "id": 100,
-            "content": "Здравствуйте, меня зовут Иван Петров, тел +79991234567",
-            "message_type": "incoming",
-            "conversation": {"id": 1, "status": "open"},
-            "sender": {
-                "id": 10,
-                "name": "Иван Петров",
-                "email": "ivan@mail.ru",
-                "phone_number": "+79991234567",
-                "type": "contact",
-            },
-            "account": {"id": 1},
-        }
-        response = client.post("/webhook", json=payload)
-        assert response.status_code == 200
-        data = response.json()
-        assert data["event"] == "message_created"
-        assert data["message_id"] == 100
-        assert data["conversation_id"] == 1
-        assert "<PHONE>" in data["anonymized_content"]
-        assert data["total_entities"] > 0
-
-    def test_webhook_anonymizes_sender(self, client):
-        payload = {
-            "event": "message_created",
-            "id": 101,
-            "content": "Привет",
-            "sender": {
-                "name": "Мария Сидорова",
-                "email": "maria@yandex.ru",
-            },
-        }
-        response = client.post("/webhook", json=payload)
-        data = response.json()
-        assert "<EMAIL>" in data["sender_anonymized"]["email"]
-
-    def test_webhook_empty_content(self, client):
-        payload = {
-            "event": "conversation_created",
-            "id": 102,
-            "content": None,
-            "sender": None,
-        }
-        response = client.post("/webhook", json=payload)
-        assert response.status_code == 200
-        data = response.json()
-        assert data["anonymized_content"] is None
-        assert data["total_entities"] == 0
-
-    def test_webhook_preserves_location_in_content(self, client):
-        payload = {
-            "event": "message_created",
-            "id": 103,
-            "content": "Иван Петров из Москвы",
-            "sender": None,
-        }
-        response = client.post("/webhook", json=payload)
-        data = response.json()
-        assert "Москв" in data["anonymized_content"]
-
-
 class TestSwaggerDocs:
     def test_openapi_schema_available(self, client):
+        """Ядровая проверка: OpenAPI отдаётся в standalone-режиме (CHATWOOT_ENABLED=false)
+        и описывает ядровые эндпоинты. Chatwoot-эндпоинты — см.
+        tests/integrations/chatwoot/test_chatwoot_api.py."""
         response = client.get("/openapi.json")
         assert response.status_code == 200
         schema = response.json()
         assert schema["info"]["title"] == "Anonymization Service"
         assert "/anonymize/text" in schema["paths"]
-        assert "/anonymize/conversation" in schema["paths"]
-        assert "/anonymize/batch" in schema["paths"]
         assert "/health" in schema["paths"]
 
     def test_swagger_ui_available(self, client):
         response = client.get("/docs")
         assert response.status_code == 200
-
-    def test_openapi_describes_conversation_response(self, client):
-        response = client.get("/openapi.json")
-        schemas = response.json()["components"]["schemas"]
-        assert "ConversationResponse" in schemas
-        conv_props = schemas["ConversationResponse"]["properties"]
-        assert "messages" in conv_props
-        assert "contact" in conv_props
-        assert "total_entities_found" in conv_props
