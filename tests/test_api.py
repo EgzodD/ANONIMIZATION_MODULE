@@ -2,7 +2,6 @@
 Тесты API эндпоинтов.
 """
 
-import pytest
 
 
 class TestHealthEndpoint:

@@ -3,22 +3,22 @@
 Подключаются в app/main.py только если settings.chatwoot_enabled == True.
 """
 
-import hmac
 import hashlib
+import hmac
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session, selectinload
 
+from app.anonymizer import anonymize_json, anonymize_text
 from app.auth import require_api_key
 from app.config import settings
-from app.anonymizer import anonymize_text, anonymize_json
-from app.integrations.chatwoot.database import get_db, Conversation
+from app.integrations.chatwoot.database import Conversation, get_db
 from app.integrations.chatwoot.schemas import (
-    AnonymizeConversationRequest,
     AnonymizeBatchRequest,
-    ConversationResponse,
+    AnonymizeConversationRequest,
     BatchResponse,
+    ConversationResponse,
     WebhookPayload,
     WebhookResponse,
 )

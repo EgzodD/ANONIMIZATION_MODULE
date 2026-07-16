@@ -3,8 +3,7 @@
 Presidio по умолчанию не знает русские паттерны — добавляем их вручную.
 """
 
-from presidio_analyzer import PatternRecognizer, Pattern, EntityRecognizer, RecognizerResult
-
+from presidio_analyzer import EntityRecognizer, Pattern, PatternRecognizer, RecognizerResult
 
 ru_phone_recognizer = PatternRecognizer(
     supported_entity="PHONE_NUMBER",
@@ -190,7 +189,7 @@ class NatashaPersonRecognizer(EntityRecognizer):
         self._ner = None
 
     def load(self):
-        from natasha import Segmenter, NewsEmbedding, NewsNERTagger
+        from natasha import NewsEmbedding, NewsNERTagger, Segmenter
         self._segmenter = Segmenter()
         emb = NewsEmbedding()
         self._ner = NewsNERTagger(emb)
@@ -228,7 +227,7 @@ natasha_person_recognizer = NatashaPersonRecognizer()
 #   - если задана обученная ruBERT-модель (env PERSON_MODEL_DIR) — используем её
 #     (это «обученная Natasha» для Тестов 3/4);
 #   - иначе стоковая Natasha (NewsNERTagger) — поведение по умолчанию.
-from app.person_transformer_recognizer import (
+from app.person_transformer_recognizer import (  # noqa: E402 — намеренно рядом с логикой выбора
     PersonTransformerRecognizer,
     person_model_available,
 )

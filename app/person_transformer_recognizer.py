@@ -12,8 +12,8 @@
 ломало запуск сервиса.
 """
 
-import os
 import logging
+import os
 
 from presidio_analyzer import EntityRecognizer, RecognizerResult
 
@@ -66,8 +66,8 @@ class PersonTransformerRecognizer(EntityRecognizer):
             return
         try:
             from transformers import (
-                AutoTokenizer,
                 AutoModelForTokenClassification,
+                AutoTokenizer,
                 pipeline,
             )
 

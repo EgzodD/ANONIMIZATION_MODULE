@@ -6,12 +6,12 @@
 """
 
 from app.anonymizer import (
-    anonymize_text,
-    anonymize_json,
-    analyze_text,
-    resolve_disabled_entities,
-    POLICY_ENTITIES,
     EXCLUDED_ENTITIES,
+    POLICY_ENTITIES,
+    analyze_text,
+    anonymize_json,
+    anonymize_text,
+    resolve_disabled_entities,
 )
 
 

@@ -3,11 +3,11 @@ Pydantic-модели, специфичные для интеграции с Cha
 CHATWOOT_ENABLED=true). Ядровые модели см. app/models.py.
 """
 
-from pydantic import BaseModel, Field
 from datetime import datetime
 
-from app.models import EntityFound, DISABLE_ENTITIES_DESC
+from pydantic import BaseModel, Field
 
+from app.models import DISABLE_ENTITIES_DESC, EntityFound
 
 # --- Request ---
 

@@ -18,9 +18,9 @@ import importlib
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import settings
-import app.main as app_main_module
 import app.integrations.chatwoot.database as chatwoot_db_module
+import app.main as app_main_module
+from app.config import settings
 
 
 @pytest.fixture

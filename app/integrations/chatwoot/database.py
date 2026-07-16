@@ -8,9 +8,9 @@ Engine и sessionmaker создаются ЛЕНИВО (при первом об
 при вызове get_engine()/get_session_local()/get_db().
 """
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, Numeric
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, Text, create_engine
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import sessionmaker, declarative_base, relationship
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from app.config import settings
 

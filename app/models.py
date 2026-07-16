@@ -5,7 +5,6 @@
 
 from pydantic import BaseModel, Field
 
-
 # --- Request ---
 
 # Общее описание кастомного параметра для всех запросов анонимизации.

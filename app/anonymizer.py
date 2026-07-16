@@ -31,6 +31,25 @@ OPERATORS = {
 }
 
 
+def _resolve_overlaps(results):
+    """Оставляет непересекающиеся спаны — как presidio делает для текста.
+
+    Одно значение (например число-ИНН) может ловиться сразу несколькими
+    распознавателями (ИНН + телефон + паспорт). В анонимизированном ТЕКСТЕ
+    presidio оставляет один спан (высший score), а вот mapping раньше строился
+    по всем «сырым» результатам — и плейсхолдер затирался чужим значением
+    (<PHONE> получал значение ИНН). Здесь берём тот же непересекающийся набор:
+    сортировка по score убыв., при равенстве — длиннее; пересекающиеся с уже
+    выбранными отбрасываем.
+    """
+    chosen = []
+    for r in sorted(results, key=lambda x: (-x.score, -(x.end - x.start))):
+        if any(not (r.end <= c.start or r.start >= c.end) for c in chosen):
+            continue
+        chosen.append(r)
+    return chosen
+
+
 def _build_analyzer() -> AnalyzerEngine:
     nlp_config = {
         "nlp_engine_name": "spacy",
@@ -129,7 +148,7 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
     )
 
     mapping = {}
-    for result in results:
+    for result in _resolve_overlaps(results):
         if result.entity_type not in EXCLUDED_ENTITIES:
             original_value = text[result.start : result.end]
             op = OPERATORS.get(result.entity_type, OPERATORS["DEFAULT"])

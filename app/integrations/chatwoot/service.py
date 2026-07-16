@@ -8,12 +8,12 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.anonymizer import anonymize_text, anonymize_json
-from app.integrations.chatwoot.database import Conversation, Message, Contact
+from app.anonymizer import anonymize_json, anonymize_text
+from app.integrations.chatwoot.database import Contact, Conversation
 from app.integrations.chatwoot.schemas import (
+    ContactAnonymized,
     ConversationResponse,
     MessageAnonymized,
-    ContactAnonymized,
 )
 
 

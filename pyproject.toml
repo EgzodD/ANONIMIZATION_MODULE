@@ -6,8 +6,14 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# GramLynx — вендоренный отдельный сервис (свой app/, свой .venv), не код модуля.
+extend-exclude = ["tests/GramLynx"]
 
 [tool.ruff.lint]
 # Базовый набор: ошибки (E,F), баги (B), импорты (I). Без вкусовщины.
 select = ["E", "F", "B", "I"]
-ignore = ["E501"]  # длину строк не блокируем жёстко
+ignore = [
+    "E501",  # длину строк не блокируем жёстко
+    "B008",  # Depends() в дефолтах аргументов — идиома FastAPI, не ошибка
+    "B905",  # zip() без strict= — стилевая мелочь
+]

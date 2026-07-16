@@ -54,18 +54,21 @@ class TestFullPipelineReversible:
     """
 
     def test_all_pii_masked_then_restored(self):
-        # Берём типы, которые НЕ конкурируют за один и тот же плейсхолдер.
-        # (Число-ИНН, например, ловится ещё и телефоном/паспортом — тогда
-        # mapping по плейсхолдеру схлопывается; это отдельная известная
-        # особенность, здесь мы демонстрируем чистый круг обратимости.)
-        original = "Телефон +79991234567, почта test@mail.ru"
+        # Включаем ИНН намеренно: число-ИНН ловится ещё и телефоном/паспортом.
+        # Раньше mapping по плейсхолдеру схлопывался (<PHONE> получал значение
+        # ИНН) и обратный ход ломался. После фикса (_resolve_overlaps в
+        # anonymizer.py) mapping строится только по применённым спанам — круг
+        # обратимости замыкается.
+        original = "Телефон +79991234567, почта test@mail.ru, ИНН 7701234560"
         res = anonymize_text(original)
 
         # 1) все значения ПДн скрыты, плейсхолдеры на месте
         assert "+79991234567" not in res["anonymized"]
         assert "test@mail.ru" not in res["anonymized"]
+        assert "7701234560" not in res["anonymized"]
         assert "<PHONE>" in res["anonymized"]
         assert "<EMAIL>" in res["anonymized"]
+        assert "<INN>" in res["anonymized"]
 
         # 2) обратный ход: по mapping восстанавливаем оригинал
         restored = res["anonymized"]

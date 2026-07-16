@@ -4,8 +4,10 @@
 
 import csv
 import os
+
 import pytest
-from app.anonymizer import anonymize_text, analyze_text
+
+from app.anonymizer import analyze_text, anonymize_text
 
 
 class TestPersonRecognition:

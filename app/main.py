@@ -7,12 +7,12 @@
 
 import logging
 
-from fastapi import FastAPI, Depends
+from fastapi import Depends, FastAPI
 from sqlalchemy import text as sql_text
 
-from app.config import settings
+from app.anonymizer import EXCLUDED_ENTITIES, analyzer_engine, anonymize_text
 from app.auth import require_api_key
-from app.anonymizer import anonymize_text, analyzer_engine, EXCLUDED_ENTITIES
+from app.config import settings
 from app.models import AnonymizeTextRequest, AnonymizeTextResponse, HealthResponse
 
 logger = logging.getLogger(__name__)
