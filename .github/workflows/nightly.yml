@@ -1,0 +1,35 @@
+# CI — контур 2: тяжёлые проверки по расписанию (не на каждый коммит).
+# Здесь живёт то, что медленно/шумно для per-commit: полный прогон, метрики
+# качества NER, нагрузочное. Формат-близнец в .github/workflows/.
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # каждую ночь в 02:00 UTC
+  workflow_dispatch: {}    # + запуск вручную из интерфейса
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Установка зависимостей
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m spacy download ru_core_news_lg
+          pip install pytest-cov
+
+      # Полный прогон набора. Если модель подключена (см. privacy-gate в ci.yml) —
+      # сюда же встанет requires_model; без модели требующие её тесты пропустятся.
+      - name: Полный прогон тестов
+        run: pytest -q --cov=app --cov-report=term-missing
+
+      # TODO (когда будет модель-артефакт и стенд):
+      #  - Полные метрики качества NER на held-out (precision/recall/F2).
+      #  - Нагрузочное: локально поднять сервис + прогнать locust/k6, снять латентность/throughput.

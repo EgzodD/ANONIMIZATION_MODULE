@@ -1,0 +1,13 @@
+[tool.pytest.ini_options]
+markers = [
+    "requires_model: тест требует дообученную PERSON-модель (ruBERT); в CI без модели пропускается через -m 'not requires_model'",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Базовый набор: ошибки (E,F), баги (B), импорты (I). Без вкусовщины.
+select = ["E", "F", "B", "I"]
+ignore = ["E501"]  # длину строк не блокируем жёстко
