@@ -3,7 +3,11 @@
 Presidio по умолчанию не знает русские паттерны — добавляем их вручную.
 """
 
-from presidio_analyzer import EntityRecognizer, Pattern, PatternRecognizer, RecognizerResult
+import logging
+
+from presidio_analyzer import Pattern, PatternRecognizer
+
+logger = logging.getLogger(__name__)
 
 ru_phone_recognizer = PatternRecognizer(
     supported_entity="PHONE_NUMBER",
@@ -173,70 +177,20 @@ ru_card_number_recognizer = PatternRecognizer(
 )
 
 
-class NatashaPersonRecognizer(EntityRecognizer):
-    """Распознаватель PERSON на базе Natasha slovnet-NER.
-    Понимает все падежи русских имён через контекстные эмбеддинги.
-    F1 ~0.87 на CPU без GPU.
-    """
-
-    def __init__(self):
-        super().__init__(
-            supported_entities=["PERSON"],
-            supported_language="ru",
-            name="NatashaPersonRecognizer",
-        )
-        self._segmenter = None
-        self._ner = None
-
-    def load(self):
-        from natasha import NewsEmbedding, NewsNERTagger, Segmenter
-        self._segmenter = Segmenter()
-        emb = NewsEmbedding()
-        self._ner = NewsNERTagger(emb)
-
-    def _ensure_loaded(self):
-        if self._ner is None:
-            self.load()
-
-    def analyze(self, text, entities, nlp_artifacts=None):
-        if "PERSON" not in entities:
-            return []
-        self._ensure_loaded()
-
-        from natasha import Doc
-        doc = Doc(text)
-        doc.segment(self._segmenter)
-        doc.tag_ner(self._ner)
-
-        return [
-            RecognizerResult(
-                entity_type="PERSON",
-                start=span.start,
-                end=span.stop,
-                score=0.85,
-            )
-            for span in doc.spans
-            if span.type == "PER"
-        ]
-
-
-natasha_person_recognizer = NatashaPersonRecognizer()
-
-
-# Выбор распознавателя PERSON:
-#   - если задана обученная ruBERT-модель (env PERSON_MODEL_DIR) — используем её
-#     (это «обученная Natasha» для Тестов 3/4);
-#   - иначе стоковая Natasha (NewsNERTagger) — поведение по умолчанию.
+# Распознаватель PERSON — только наш дообученный ruBERT (models/person_ruBERT).
+#
+# Запасного распознавателя здесь намеренно НЕТ. Раньше стоял фолбэк на стоковую
+# Natasha: если модели не было, он подхватывался молча, сервис выглядел исправным
+# (health отвечал ok), но давал утечки ФИО — 0.94% (3 из 318) на тестовом наборе.
+# Отсутствие модели должно быть громким, а не тихим, поэтому:
+#   - модель есть  -> работает ruBERT;
+#   - модели нет   -> PERSON не ищется вообще, а app/main.py отказывается стартовать
+#                     (кроме явного ALLOW_NO_PERSON_MODEL=true для тестов/CI).
 from app.person_transformer_recognizer import (  # noqa: E402 — намеренно рядом с логикой выбора
+    PERSON_MODEL_DIR,
     PersonTransformerRecognizer,
     person_model_available,
 )
-
-if person_model_available():
-    _person_recognizer = PersonTransformerRecognizer()
-else:
-    _person_recognizer = natasha_person_recognizer
-
 
 ALL_RU_RECOGNIZERS = [
     ru_phone_recognizer,
@@ -246,5 +200,15 @@ ALL_RU_RECOGNIZERS = [
     ru_email_recognizer,
     ru_date_of_birth_recognizer,
     ru_card_number_recognizer,
-    _person_recognizer,
 ]
+
+if person_model_available():
+    _person_recognizer = PersonTransformerRecognizer()
+    ALL_RU_RECOGNIZERS.append(_person_recognizer)
+else:
+    _person_recognizer = None
+    logger.warning(
+        "Модель PERSON не найдена (PERSON_MODEL_DIR=%r) — ФИО распознаваться НЕ будут. "
+        "Это допустимо только для тестов и CI.",
+        PERSON_MODEL_DIR,
+    )

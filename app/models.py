@@ -54,6 +54,10 @@ class AnonymizeTextResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     analyzer_ready: bool
+    # false = модель PERSON не загружена, ФИО НЕ распознаются. Вынесено в health
+    # осознанно: снаружи это единственный способ отличить рабочий сервис от того,
+    # который пропускает ФИО. В проде значение всегда должно быть true.
+    person_model_loaded: bool
     db_connected: bool | None = None  # null = интеграция с Chatwoot выключена, БД не проверялась
     chatwoot_enabled: bool
     supported_entities: list[str]

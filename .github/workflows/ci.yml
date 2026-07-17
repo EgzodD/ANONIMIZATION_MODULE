@@ -39,6 +39,11 @@ jobs:
         run: pip-audit -r requirements.txt || true
 
       - name: Тесты (модель-независимый контур) + покрытие
+        # Модели PERSON в чекауте нет (114 МБ, models/ в .gitignore), а без неё
+        # сервис намеренно не стартует — поэтому здесь явно разрешаем запуск.
+        # Тесты, которым модель нужна, помечены requires_model и исключены.
+        env:
+          ALLOW_NO_PERSON_MODEL: "true"
         run: pytest -m "not requires_model" --cov=app --cov-report=term-missing
 
   # ── Приватностный гейт (LeakRate) ─────────────────────────────────────────

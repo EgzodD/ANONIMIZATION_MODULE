@@ -34,7 +34,7 @@ cp .env.example .env
 ```env
 CHATWOOT_ENABLED=false          # можно не указывать — это значение по умолчанию
 API_KEY=<длинный_случайный_ключ>  # защита эндпоинтов; пусто = без аутентификации (только для разработки)
-PERSON_MODEL_DIR=/app/models/person_ruBERT  # модель ФИО; пусто = стоковая Natasha
+PERSON_MODEL_DIR=/app/models/person_ruBERT  # модель ФИО; ОБЯЗАТЕЛЬНА — без неё сервис не стартует
 ```
 
 `DATABASE_URL` и `CHATWOOT_WEBHOOK_SECRET` в этом режиме не требуются.
@@ -165,6 +165,7 @@ curl http://localhost:8000/health
 {
   "status": "ok",
   "analyzer_ready": true,
+  "person_model_loaded": true,
   "chatwoot_enabled": false,
   "db_connected": null,
   "supported_entities": ["CREDIT_CARD", "DATE_OF_BIRTH", "EMAIL_ADDRESS", "INN", "PASSPORT", "PERSON", "PHONE_NUMBER", "SNILS"]
@@ -174,6 +175,12 @@ curl http://localhost:8000/health
 `db_connected` равен `null` в автономном режиме (БД не используется). При
 `CHATWOOT_ENABLED=true` поле показывает `true`/`false` по состоянию базы, а
 `status` становится `degraded`, если база недоступна.
+
+`person_model_loaded` показывает, загружена ли модель распознавания ФИО. **В проде
+должно быть `true`.** Если `false` — ФИО не распознаются и уйдут в ответ открытым
+текстом; `status` при этом `degraded`. Обычно сервис в таком состоянии просто не
+стартует, но если он был запущен с `ALLOW_NO_PERSON_MODEL=true` (режим для тестов
+и CI) — это единственный способ увидеть проблему снаружи.
 
 Swagger UI (интерактивная документация API):
 ```

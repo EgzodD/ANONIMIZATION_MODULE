@@ -13,8 +13,28 @@ from app.anonymizer import EXCLUDED_ENTITIES, analyzer_engine, anonymize_text
 from app.auth import require_api_key
 from app.config import settings
 from app.models import AnonymizeTextRequest, AnonymizeTextResponse, HealthResponse
+from app.person_transformer_recognizer import person_model_available
 
 logger = logging.getLogger(__name__)
+
+# ─── Модель PERSON обязательна ─────────────────────────────────────────────
+# Fail fast: без дообученной модели ФИО не распознаются вообще и уходят в выдачу
+# как есть. Раньше в этом случае молча включался фолбэк на стоковую Natasha —
+# сервис выглядел исправным, а на деле давал утечки (0.94%, 3 из 318). Лучше не
+# стартовать совсем, чем работать дырявым и рапортовать "ok".
+if not person_model_available():
+    if not settings.allow_no_person_model:
+        raise RuntimeError(
+            "Модель PERSON не найдена: PERSON_MODEL_DIR не задан или в нём нет "
+            "config.json. Сервис не может работать без неё — ФИО не будут "
+            "обнаружены и попадут в ответ в открытом виде. Укажите PERSON_MODEL_DIR "
+            "(загрузить модель: scripts/fetch_person_model.sh). Только для тестов и "
+            "CI запуск без модели разрешается флагом ALLOW_NO_PERSON_MODEL=true."
+        )
+    logger.warning(
+        "ЗАПУСК БЕЗ МОДЕЛИ PERSON (ALLOW_NO_PERSON_MODEL=true). ФИО НЕ распознаются. "
+        "Это режим для тестов и CI — в проде он недопустим."
+    )
 
 _CORE_DESCRIPTION = (
     "Микросервис анонимизации персональных данных в русскоязычных текстах.\n\n"
@@ -134,11 +154,17 @@ def health_check():
     filtered = [e for e in supported if e not in EXCLUDED_ENTITIES]
 
     analyzer_ready = True
-    status = "ok" if analyzer_ready and (not settings.chatwoot_enabled or db_ok) else "degraded"
+    person_ready = person_model_available()
+    status = (
+        "ok"
+        if analyzer_ready and person_ready and (not settings.chatwoot_enabled or db_ok)
+        else "degraded"
+    )
 
     return HealthResponse(
         status=status,
         analyzer_ready=analyzer_ready,
+        person_model_loaded=person_ready,
         db_connected=db_ok,
         chatwoot_enabled=settings.chatwoot_enabled,
         supported_entities=sorted(filtered),

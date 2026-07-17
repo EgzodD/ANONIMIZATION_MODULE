@@ -11,7 +11,14 @@ class Settings(BaseSettings):
     database_url: str = ""
     api_key: str = ""                    # пустая строка = аутентификация отключена
     chatwoot_webhook_secret: str = ""    # пустая строка = проверка подписи отключена; используется только при chatwoot_enabled=true
-    person_model_dir: str = ""           # путь к дообученной ruBERT-модели PERSON; пусто = стоковая Natasha
+
+    # Путь к дообученной ruBERT-модели PERSON. Обязателен: без модели ФИО не
+    # распознаются вообще, поэтому сервис откажется стартовать (см. app/main.py).
+    person_model_dir: str = ""
+
+    # Аварийный флаг: разрешить запуск БЕЗ модели PERSON. Только для тестов и CI,
+    # где модели нет в чекауте. В проде включать нельзя — ФИО будут утекать.
+    allow_no_person_model: bool = False
 
     class Config:
         env_file = ".env"

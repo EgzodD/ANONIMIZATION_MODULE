@@ -50,9 +50,9 @@ class TestLeakRateRegression:
     """Порог приватности: 0 утечек ПДн на held-out тест-сете.
 
     Помечен requires_model: гейт имеет смысл только на продакшн-модели PERSON
-    (дообученный ruBERT). Без модели активна стоковая Natasha, которая даёт
-    утечки, — в CI без модели этот класс не запускается (см. pyproject.toml,
-    .gitea/workflows/ci.yml).
+    (дообученный ruBERT). Без модели распознавателя ФИО нет вообще, все имена
+    утекут, и гейт упадёт не по делу — поэтому в CI без модели этот класс не
+    запускается (см. pyproject.toml, .github/workflows/ci.yml).
     """
 
     def test_no_pii_leaks(self):
@@ -80,8 +80,8 @@ class TestLeakRateRegression:
         leak_rate = len(leaks) / leak_total * 100
         model_note = (
             "ruBERT активен" if person_model_available()
-            else "ВНИМАНИЕ: ruBERT НЕактивен (стоковая Natasha даёт утечки) — "
-                 "проверьте PERSON_MODEL_DIR в .env"
+            else "ВНИМАНИЕ: модель PERSON НЕ загружена — распознавателя ФИО нет, "
+                 "имена утекут. Проверьте PERSON_MODEL_DIR в .env"
         )
         # индексы примеров с утечкой (без значений ПДн) — для быстрой локализации
         example_idxs = sorted({i for i, _ in leaks})
