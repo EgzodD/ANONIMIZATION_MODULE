@@ -8,7 +8,6 @@
 import logging
 
 from fastapi import Depends, FastAPI
-from sqlalchemy import text as sql_text
 
 from app.anonymizer import EXCLUDED_ENTITIES, analyzer_engine, anonymize_text
 from app.auth import require_api_key
@@ -116,6 +115,10 @@ def health_check():
     if settings.chatwoot_enabled:
         db_ok = False
         try:
+            # sqlalchemy импортируется здесь, а не на уровне модуля: в standalone
+            # ядро не должно тянуть БД-стек в память вообще.
+            from sqlalchemy import text as sql_text
+
             from app.integrations.chatwoot.database import get_session_local
 
             db = get_session_local()()
