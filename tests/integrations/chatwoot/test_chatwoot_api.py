@@ -15,6 +15,8 @@ CHATWOOT_ENABLED=true. Реальный Postgres не поднимается: DA
 
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 class TestWebhookEndpoint:
     def test_webhook_message_created(self, client):

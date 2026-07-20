@@ -3,15 +3,36 @@
 Как устроены тесты модуля обезличивания, как их запускать и почему два теста
 помечены `xfail` (а не «падают» и не «выключены»).
 
-Текущее состояние прогона: **67 passed, 2 xfailed, 0 failed** (69 тестов).
+Текущее состояние прогона: **75 passed, 2 xfailed, 0 failed** (77 тестов).
 
 ---
 
 ## 1. Как запускать
 
+### Меню (проще всего)
+
+```bash
+./scripts/test_menu.py            # интерактивное меню: выбрать что проверить
+./scripts/test_menu.py speed      # сразу нужная категория, без меню
+./scripts/test_menu.py --list     # список категорий с числом тестов
+```
+
+Категории — это цели тестирования: `security` (безопасность), `privacy`
+(гейт утечек), `speed` (скорость), `unit` (распознавание типов ПДн),
+`integration` (API + Chatwoot), `e2e` (вся цепочка + обратимость),
+`custom_params` (параметр `disable_entities`), `ci` (как в CI). Один тест может
+входить в несколько категорий — например проверка API-ключа это и `security`,
+и `integration`. Меню само пропускает `privacy`, если модели PERSON нет локально.
+
+### Напрямую через pytest
+
 ```bash
 # весь набор
 .venv/bin/python -m pytest tests/ -q
+
+# по категории (маркеру)
+.venv/bin/python -m pytest -m security -q
+.venv/bin/python -m pytest -m speed -s        # -s чтобы видеть цифры латентности
 
 # только ядро (без интеграции Chatwoot)
 .venv/bin/python -m pytest tests/test_api.py tests/test_anonymizer.py tests/test_custom_params.py -q
@@ -22,6 +43,10 @@
 # регрессия приватности (главный сторож)
 .venv/bin/python -m pytest tests/test_leakrate_regression.py -v
 ```
+
+> Если модели PERSON нет в чекауте, для запуска нужен флаг
+> `ALLOW_NO_PERSON_MODEL=true` (иначе сервис намеренно не стартует). Меню и
+> `tests/conftest.py` проставляют его сами; при ручном вызове pytest задайте в env.
 
 Тесты разнесены по двум режимам ровно так же, как разнесён код:
 **ядро** (обезличивание текста, БД не нужна) и **адаптер Chatwoot** (за флагом

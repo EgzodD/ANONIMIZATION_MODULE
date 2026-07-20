@@ -45,6 +45,7 @@ def _load_examples():
     return examples
 
 
+@pytest.mark.privacy
 @pytest.mark.requires_model
 class TestLeakRateRegression:
     """Порог приватности: 0 утечек ПДн на held-out тест-сете.

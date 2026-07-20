@@ -1,5 +1,8 @@
 """
 Тесты модуля анонимизации — проверка распознавания русских ПДн.
+
+Категория: модульные (unit) — каждый тип ПДн проверяется изолированно.
+Запуск только этой категории: pytest -m unit (или через scripts/test_menu.py).
 """
 
 import csv
@@ -8,6 +11,8 @@ import os
 import pytest
 
 from app.anonymizer import analyze_text, anonymize_text
+
+pytestmark = pytest.mark.unit
 
 
 class TestPersonRecognition:

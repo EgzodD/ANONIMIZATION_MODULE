@@ -3,7 +3,12 @@
 сущностей в запросе. Проверяем, что параметр только СУЖАЕТ анонимизацию
 (отключает разрешённые типы), не даёт включить запрещённые и не роняет запрос
 на мусорных значениях.
+
+Категория: custom_params (+ security на проверке границ политики).
+Запуск: pytest -m custom_params (или scripts/test_menu.py).
 """
+
+import pytest
 
 from app.anonymizer import (
     EXCLUDED_ENTITIES,
@@ -14,7 +19,12 @@ from app.anonymizer import (
     resolve_disabled_entities,
 )
 
+pytestmark = pytest.mark.custom_params
 
+
+# Границы политики — это свойство безопасности: параметр не должен позволять
+# РАСШИРИТЬ анонимизацию за пределы политики сервиса, только сузить внутри неё.
+@pytest.mark.security
 class TestResolveDisabledEntities:
     def test_empty_returns_empty(self):
         assert resolve_disabled_entities(None) == frozenset()

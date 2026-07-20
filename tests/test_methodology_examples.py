@@ -15,6 +15,8 @@ from app.anonymizer import anonymize_text
 from app.config import settings
 
 
+@pytest.mark.security
+@pytest.mark.integration
 class TestApiRequiresKey:
     """
     Ось 4 (цель): тестирование БЕЗОПАСНОСТИ.
@@ -42,6 +44,7 @@ class TestApiRequiresKey:
         assert resp.status_code == 200
 
 
+@pytest.mark.e2e
 class TestFullPipelineReversible:
     """
     Ось 3 (уровень): СИСТЕМНОЕ — прогоняем всю цепочку целиком.
@@ -77,6 +80,7 @@ class TestFullPipelineReversible:
         assert restored == original
 
 
+@pytest.mark.unit
 class TestEmptyAndNoPii:
     """
     Ось 2 (техника): эквивалентное разделение — берём по одному представителю

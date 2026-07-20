@@ -1,6 +1,13 @@
 """
 Тесты API эндпоинтов.
+
+Категория: интеграционные — ходим по HTTP через TestClient.
+Запуск только этой категории: pytest -m integration (или scripts/test_menu.py).
 """
+
+import pytest
+
+pytestmark = pytest.mark.integration
 
 
 
