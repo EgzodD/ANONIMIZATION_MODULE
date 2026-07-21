@@ -1,41 +1,42 @@
 """
-Оценка модуля анонимизации по методике 2x2 (Presidio Evaluator-style).
+Оценка качества обезличивания на held-out наборе (Presidio Evaluator-style).
 
-Факторы:
-  prep  = предобработка текста через GramLynx (вкл/выкл)
-  train = дообученная Natasha (обучена / не обучена)
+Что меряет: насколько полно и точно модуль находит ПДн в тексте. Оценивается
+ОДНА конфигурация — та модель PERSON, что сейчас загружена (определяется
+переменной PERSON_MODEL_DIR). Чтобы сравнить две модели (например базовую и
+нашу дообученную), скрипт запускают дважды с разным PERSON_MODEL_DIR и сводят
+результаты.
 
-Ячейки:
-  Тест 1: prep=off, train=off   ← базовая точка (запускается всегда)
-  Тест 2: prep=on,  train=off   ← нужен запущенный GramLynx (GRAMLYNX_URL)
-  Тест 3: prep=off, train=on    ← нужен fine-tune Natasha (NATASHA_TRAINED)
-  Тест 4: prep=on,  train=on    ← нужны оба
+История: раньше здесь был факторный план 2×2 (предобработка GramLynx × модель).
+Предобработка отклонена по результатам замеров (×4-5 латентности при нулевом
+выигрыше по приватности) и удалена из проекта — вместе с ней убран весь prep-код
+и выравнивание координат. Осталась одна ось — модель. Имя файла (eval_2x2)
+сохранено историческим, чтобы не рвать ссылки; по сути это уже оценка одной
+конфигурации.
 
-Метрики (по методике):
+Метрики:
   - per-type + overall TP/FP/FN
   - Precision, Recall, F2 (recall-weighted)
   - Micro и Macro агрегация
   - strict / relaxed сопоставление спанов
-  - LeakRate (утечка значения ПДн в выходной текст) — устойчива к сдвигам от GramLynx
-  - Время: N-проход для качества, K повторов + warmup для времени, медиана
+  - LeakRate (значение ПДн осталось в выходном тексте) — главный показатель приватности
+  - Время: K повторов + warmup, медиана мс/текст
 
-Результат пишется в eval_2x2_results.json — из него собирается отчёт.
+Результат пишется в JSON (по умолчанию eval_2x2_results.json) — из него собирается отчёт.
 """
+import argparse
 import json
 import os
+import statistics
 import sys
 import time
-import argparse
-import difflib
-import statistics
-import urllib.request
 from collections import Counter, defaultdict
 
 PROJ = "/media/egzod/01D7DA4662F24750/work/DENIS WORK/MY_PROJECTS/GLOBAL PROJECT/ANONIMIZATION_MODULE(work)"
 sys.path.insert(0, PROJ)
 
 TEST_PATH = os.path.join(PROJ, "data/natasha_training/test/test.jsonl")
-OUT_JSON = os.path.join(PROJ, "data/natasha_training/eval_2x2_results.json")
+DEFAULT_OUT = os.path.join(PROJ, "data/natasha_training/eval_2x2_results.json")
 
 # Типы ПДн, которые оцениваем
 TYPES = ["PERSON", "PHONE_NUMBER", "EMAIL_ADDRESS", "INN", "SNILS",
@@ -48,10 +49,9 @@ TYPE_ALIAS = {
     "DATE_TIME": "DATE_OF_BIRTH",  # присваиваем к дате рождения только при пересечении с gold
 }
 
-GRAMLYNX_URL = os.environ.get("GRAMLYNX_URL", "").rstrip("/")
-
 # ── адаптер к нашему сервису ──────────────────────────────────────────────
-from app.anonymizer import anonymize_text  # строит весь AnalyzerEngine при импорте
+# noqa: E402 — импорт после sys.path.insert(PROJ), иначе app не найдётся
+from app.anonymizer import anonymize_text  # noqa: E402  (строит AnalyzerEngine при импорте)
 
 
 def norm_type(t):
@@ -61,23 +61,10 @@ def norm_type(t):
 def predict(text):
     """Адаптер: текст → (спаны, анонимизированный_текст).
     Спаны в формате (тип, start, end). Возвращаем весь выход сервиса целиком —
-    Presidio + regex + Natasha уже слиты в один список."""
+    Presidio + regex + модель PERSON уже слиты в один список."""
     res = anonymize_text(text)
     spans = [(norm_type(e["entity_type"]), e["start"], e["end"]) for e in res["entities_found"]]
     return spans, res["anonymized"]
-
-
-def gramlynx_correct(text):
-    """Предобработка через GramLynx. Требует запущенного сервиса (GRAMLYNX_URL)."""
-    body = json.dumps({"text": text}).encode("utf-8")
-    req = urllib.request.Request(
-        GRAMLYNX_URL + "/v1/correct",
-        data=body,
-        headers={"Content-Type": "application/json; charset=utf-8"},
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return json.loads(r.read().decode("utf-8"))["corrected_text"]
 
 
 # ── сопоставление спанов ──────────────────────────────────────────────────
@@ -85,47 +72,11 @@ def overlap(a, b):
     return not (a[1] <= b[0] or b[1] <= a[0])
 
 
-# ── КОСТЫЛЬ: выравнивание gold-координат на текст после предобработки ──────
-# Разметка (gold) сделана по ОРИГИНАЛУ. GramLynx переписывает текст и сдвигает
-# позиции, из-за чего span-метрики для prep-on ячеек напрямую невалидны.
-# Ниже — ЭВРИСТИЧЕСКОЕ отображение позиций оригинал->исправленный через
-# difflib. Для НЕизменённых участков отображение точное; для изменённых
-# (replace/insert/delete) позиция приближается к началу изменённого блока.
-# Поэтому STRICT для prep-on считать осторожно (границы приблизительные),
-# показательнее RELAXED (пересечение) и LeakRate. Это временное решение,
-# честный путь — повторная разметка уже исправленного текста.
-def build_char_map(orig, corrected):
-    """orig-индекс -> corrected-индекс. Длина len(orig)+1 (включая конец)."""
-    cmap = [None] * (len(orig) + 1)
-    sm = difflib.SequenceMatcher(None, orig, corrected, autojunk=False)
-    for tag, i1, i2, j1, j2 in sm.get_opcodes():
-        if tag == "equal":
-            for k in range(i2 - i1):
-                cmap[i1 + k] = j1 + k
-        else:
-            # изменённый участок: схлопываем к началу соответствующего блока
-            for k in range(i1, i2):
-                cmap[k] = j1
-    cmap[len(orig)] = len(corrected)
-    return cmap
-
-
-def map_span(cmap, s, e, corrected_len):
-    """Переносит (s, e) из оригинала в координаты исправленного текста."""
-    ns = cmap[s] if s < len(cmap) and cmap[s] is not None else 0
-    ne = cmap[e] if e < len(cmap) and cmap[e] is not None else corrected_len
-    if ne < ns:
-        ne = ns
-    return ns, ne
-
-
-def eval_quality(examples, apply_prep):
+def eval_quality(examples):
     """Считает per-type TP/FP/FN (strict и relaxed) + LeakRate.
 
-    Span-метрики считаются ВСЕГДА. При apply_prep=True gold-координаты
-    выравниваются на исправленный текст эвристикой build_char_map (см. КОСТЫЛЬ
-    выше): STRICT в этом режиме приблизительный (границы), RELAXED и LeakRate —
-    надёжные. Флаг span_aligned помечает, что span-метрики получены выравниванием."""
+    Разметка (gold) сделана по оригинальному тексту; модуль его не переписывает,
+    поэтому координаты совпадают напрямую и никакого выравнивания не нужно."""
     strict = defaultdict(Counter)   # type -> tp/fp/fn
     relaxed = defaultdict(Counter)
     leak_total = 0
@@ -134,43 +85,36 @@ def eval_quality(examples, apply_prep):
     for ex in examples:
         orig = ex["text"]
         gold = [(sp["type"], sp["start"], sp["stop"]) for sp in ex["spans"]]
-
-        text = gramlynx_correct(orig) if apply_prep else orig
-        pred, anon = predict(text)
-
-        # ── gold в координатах текста, по которому шло предсказание ──
-        if apply_prep:
-            cmap = build_char_map(orig, text)
-            gold_eval = [(t, *map_span(cmap, s, e, len(text))) for (t, s, e) in gold]
-        else:
-            gold_eval = gold
+        pred, anon = predict(orig)
 
         # ── span-level ──
         used_s, used_r = set(), set()
-        for gt, gs, ge in gold_eval:
+        for gt, gs, ge in gold:
             # strict: точные границы + тип
             si = next((i for i, (pt, ps, pe) in enumerate(pred)
                        if pt == gt and ps == gs and pe == ge and i not in used_s), None)
             if si is not None:
-                strict[gt]["tp"] += 1; used_s.add(si)
+                strict[gt]["tp"] += 1
+                used_s.add(si)
             else:
                 strict[gt]["fn"] += 1
             # relaxed: пересечение + тип
             ri = next((i for i, (pt, ps, pe) in enumerate(pred)
                        if pt == gt and overlap((gs, ge), (ps, pe)) and i not in used_r), None)
             if ri is not None:
-                relaxed[gt]["tp"] += 1; used_r.add(ri)
+                relaxed[gt]["tp"] += 1
+                used_r.add(ri)
             else:
                 relaxed[gt]["fn"] += 1
         # FP: предсказания без совпадения по типу+границам / типу+пересечению
-        for i, (pt, ps, pe) in enumerate(pred):
+        for i, (pt, _ps, _pe) in enumerate(pred):
             if i not in used_s:
                 strict[pt]["fp"] += 1
             if i not in used_r:
                 relaxed[pt]["fp"] += 1
 
-        # ── LeakRate (по ОРИГИНАЛЬНОМУ значению, валидно всегда) ──
-        for gt, gs, ge in gold:
+        # ── LeakRate (по значению ПДн) ──
+        for _gt, gs, ge in gold:
             value = orig[gs:ge].strip()
             if not value:
                 continue
@@ -184,8 +128,6 @@ def eval_quality(examples, apply_prep):
         "relaxed": {t: dict(relaxed[t]) for t in relaxed},
         "leak_total": leak_total,
         "leak_leaked": leak_leaked,
-        "span_valid": True,
-        "span_aligned": apply_prep,  # True = span-метрики через КОСТЫЛЬ-выравнивание
     }
 
 
@@ -209,8 +151,12 @@ def aggregate(counts_by_type):
         p, r, f2 = prf2(tp, fp, fn)
         per_type[t] = {"tp": tp, "fp": fp, "fn": fn,
                        "P": round(p * 100, 1), "R": round(r * 100, 1), "F2": round(f2 * 100, 1)}
-        micro["tp"] += tp; micro["fp"] += fp; micro["fn"] += fn
-        macro_p.append(p); macro_r.append(r); macro_f.append(f2)
+        micro["tp"] += tp
+        micro["fp"] += fp
+        micro["fn"] += fn
+        macro_p.append(p)
+        macro_r.append(r)
+        macro_f.append(f2)
     mp, mr, mf = prf2(micro["tp"], micro["fp"], micro["fn"])
     return {
         "per_type": per_type,
@@ -222,14 +168,13 @@ def aggregate(counts_by_type):
     }
 
 
-def measure_time(examples, apply_prep, K, warmup):
+def measure_time(examples, K, warmup):
     """K повторов + warmup, медиана мс/текст."""
     per_text_ms = []
     for k in range(warmup + K):
         t0 = time.perf_counter()
         for ex in examples:
-            text = gramlynx_correct(ex["text"]) if apply_prep else ex["text"]
-            predict(text)
+            predict(ex["text"])
         dt = (time.perf_counter() - t0) / len(examples) * 1000.0
         if k >= warmup:
             per_text_ms.append(dt)
@@ -242,89 +187,65 @@ def measure_time(examples, apply_prep, K, warmup):
     }
 
 
-def run_cell(name, examples, apply_prep, K, warmup, do_time):
-    print(f"\n=== {name}  (prep={'on' if apply_prep else 'off'}) ===")
-    q = eval_quality(examples, apply_prep)
+def run_eval(label, examples, K, warmup, do_time):
+    print(f"\n=== {label} ===")
+    q = eval_quality(examples)
     result = {
-        "name": name,
-        "prep": apply_prep,
+        "label": label,
         "n_examples": len(examples),
         "leak_total": q["leak_total"],
         "leak_leaked": q["leak_leaked"],
         "leak_rate_pct": round(q["leak_leaked"] / q["leak_total"] * 100, 2) if q["leak_total"] else 0.0,
         "value_recall_pct": round((1 - q["leak_leaked"] / q["leak_total"]) * 100, 2) if q["leak_total"] else 0.0,
-        "span_valid": q["span_valid"],
-        "span_aligned": q["span_aligned"],  # True = координаты выровнены эвристикой (КОСТЫЛЬ)
+        "strict": aggregate(q["strict"]),
+        "relaxed": aggregate(q["relaxed"]),
     }
-    if q["span_valid"]:
-        result["strict"] = aggregate(q["strict"])
-        result["relaxed"] = aggregate(q["relaxed"])
-        s, r = result["strict"], result["relaxed"]
-        tag = "  [выровнено, приблизит.]" if q["span_aligned"] else ""
-        print(f"  STRICT  micro: P={s['micro']['P']}  R={s['micro']['R']}  F2={s['micro']['F2']}{tag}")
-        print(f"  RELAXED micro: P={r['micro']['P']}  R={r['micro']['R']}  F2={r['micro']['F2']}{tag}")
+    s, r = result["strict"], result["relaxed"]
+    print(f"  STRICT  micro: P={s['micro']['P']}  R={s['micro']['R']}  F2={s['micro']['F2']}")
+    print(f"  RELAXED micro: P={r['micro']['P']}  R={r['micro']['R']}  F2={r['micro']['F2']}")
     print(f"  LeakRate = {result['leak_rate_pct']}%  (утечек {q['leak_leaked']}/{q['leak_total']}),"
           f"  value-Recall = {result['value_recall_pct']}%")
     if do_time:
-        result["timing"] = measure_time(examples, apply_prep, K, warmup)
+        result["timing"] = measure_time(examples, K, warmup)
         print(f"  Время: {result['timing']['ms_per_text_median']} мс/текст "
               f"(медиана K={K}), {result['timing']['throughput_per_sec']} текст/с")
     return result
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--cells", default="1", help="какие тесты гонять: 1,2,3,4 через запятую")
+    ap = argparse.ArgumentParser(
+        description="Оценка качества обезличивания текущей модели PERSON на held-out наборе."
+    )
+    ap.add_argument("--label", default=None,
+                    help="как назвать конфигурацию в результате (по умолчанию — по наличию модели)")
+    ap.add_argument("--out", default=DEFAULT_OUT, help="куда писать JSON с результатами")
     ap.add_argument("-K", type=int, default=5, help="повторов замера времени")
     ap.add_argument("--warmup", type=int, default=1)
     ap.add_argument("--no-time", action="store_true", help="не мерить время (быстрее)")
     args = ap.parse_args()
 
-    examples = [json.loads(l) for l in open(TEST_PATH, encoding="utf-8")]
-    cells = set(args.cells.split(","))
+    examples = [json.loads(line) for line in open(TEST_PATH, encoding="utf-8")]
     do_time = not args.no_time
 
-    # "Обучено" = реально доступна дообученная модель PERSON (а не просто флаг).
-    # Флаг NATASHA_TRAINED сам по себе модель не подменяет, поэтому им доверять нельзя:
-    # Тесты 3/4 считаются валидными только если по PERSON_MODEL_DIR лежит модель.
+    # Какая модель фактически загружена — по ней и подписываем прогон.
     try:
         from app.person_transformer_recognizer import person_model_available
         trained = person_model_available()
     except Exception:
         trained = False
-    results = {"dataset": os.path.relpath(TEST_PATH, PROJ), "n": len(examples), "cells": {}}
+    label = args.label or ("дообученная модель PERSON" if trained
+                           else "без модели PERSON (ФИО не распознаются)")
 
-    # Тест 1 — база
-    if "1" in cells:
-        results["cells"]["1"] = run_cell("Тест 1 (база: prep off, train off)",
-                                         examples, False, args.K, args.warmup, do_time)
-    # Тест 2 — предобработка
-    if "2" in cells:
-        if not GRAMLYNX_URL:
-            results["cells"]["2"] = {"name": "Тест 2", "blocked": "GRAMLYNX_URL не задан — сервис GramLynx не запущен"}
-            print("\nТест 2: ПРОПУЩЕН — не задан GRAMLYNX_URL")
-        else:
-            results["cells"]["2"] = run_cell("Тест 2 (prep on, train off)",
-                                             examples, True, args.K, args.warmup, do_time)
-    # Тест 3 — дообученная Natasha
-    if "3" in cells:
-        if not trained:
-            results["cells"]["3"] = {"name": "Тест 3", "blocked": "Дообученная модель PERSON отсутствует (PERSON_MODEL_DIR не задан или пуст)"}
-            print("\nТест 3: ЗАБЛОКИРОВАН — нет дообученной Natasha")
-        else:
-            results["cells"]["3"] = run_cell("Тест 3 (prep off, train on)",
-                                             examples, False, args.K, args.warmup, do_time)
-    # Тест 4 — оба
-    if "4" in cells:
-        if not trained or not GRAMLYNX_URL:
-            results["cells"]["4"] = {"name": "Тест 4", "blocked": "Нужны и дообученная Natasha, и запущенный GramLynx"}
-            print("\nТест 4: ЗАБЛОКИРОВАН — нужны оба фактора")
-        else:
-            results["cells"]["4"] = run_cell("Тест 4 (prep on, train on)",
-                                             examples, True, args.K, args.warmup, do_time)
+    result = run_eval(label, examples, args.K, args.warmup, do_time)
 
-    json.dump(results, open(OUT_JSON, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
-    print(f"\nРезультаты сохранены: {os.path.relpath(OUT_JSON, PROJ)}")
+    out = {
+        "dataset": os.path.relpath(TEST_PATH, PROJ),
+        "n": len(examples),
+        "model_loaded": trained,
+        "result": result,
+    }
+    json.dump(out, open(args.out, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+    print(f"\nРезультаты сохранены: {os.path.relpath(args.out, PROJ)}")
 
 
 if __name__ == "__main__":
