@@ -86,10 +86,17 @@ CATEGORIES = {
         ["-m", "not requires_model", "--cov=app", "--cov-report=term-missing"],
         False,
     ),
+    # args=None — не pytest, а показ примеров (scripts/demo_examples.py)
+    "demo": (
+        "Демо",
+        "вход → выход на примерах тест-сета: посмотреть работу глазами",
+        None,
+        False,
+    ),
 }
 
 ORDER = ["all", "security", "privacy", "speed", "unit", "integration",
-         "e2e", "custom_params", "ci"]
+         "e2e", "custom_params", "ci", "demo"]
 
 
 def model_available() -> bool:
@@ -108,6 +115,8 @@ def count(args: list) -> str:
     pytest пишет итог по-разному: без фильтра «77 tests collected», а с фильтром
     по маркеру «8/77 tests collected (69 deselected)» — берём первое число.
     """
+    if args is None:  # демо — не pytest, счётчик тестов неприменим
+        return "—"
     # для подсчёта нужны только -m <marker>; флаги прогона (-s, --cov...) мешают
     collect_args = []
     skip_next = False
@@ -174,6 +183,12 @@ def _verdict(title: str, hint: str, out: str, returncode: int) -> None:
 def run(key: str) -> int:
     title, hint, args, needs_model = CATEGORIES[key]
     has_model = model_available()
+
+    if args is None:  # демо — не pytest, просто показ примеров
+        print(f"\n▶ {title}\n", flush=True)
+        return subprocess.run(
+            [_python(), os.path.join(ROOT, "scripts", "demo_examples.py")], cwd=ROOT
+        ).returncode
 
     if needs_model and not has_model:
         print(f"\n  ⊘ «{title}» пропущено: нужна дообученная модель PERSON.")
