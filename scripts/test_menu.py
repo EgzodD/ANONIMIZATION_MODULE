@@ -133,8 +133,46 @@ def count(args: list) -> str:
     return "?"
 
 
+def _verdict(title: str, hint: str, out: str, returncode: int) -> None:
+    """Итоговый блок по-русски: что проверялось и чем закончилось.
+
+    Разбирает финальную строку pytest («20 passed, 57 deselected, ...»)
+    и переводит её в понятный вердикт, чтобы не вычитывать простыню логов.
+    """
+    counts = {k: int(n) for n, k in re.findall(
+        r"(\d+) (passed|failed|error(?:s)?|skipped|xfailed|xpassed|deselected)", out)}
+    failed = counts.get("failed", 0) + counts.get("error", 0) + counts.get("errors", 0)
+    passed = counts.get("passed", 0)
+
+    print("\n" + "═" * 62)
+    print(f"  ИТОГ — {title}")
+    print("─" * 62)
+    print(f"  Проверялось: {hint}")
+    if counts.get("deselected"):
+        print(f"  Выполнено тестов: {passed + failed}   "
+              f"({counts['deselected']} вне категории — отфильтрованы, это норма)")
+    if failed:
+        print(f"  ✘ ПРОВАЛОВ: {failed} — ищите строки FAILED выше.")
+        print("    Если это приватность (LeakRate) — не «чинить тест», а разбираться,")
+        print("    почему потекли ПДн: провал гейта = утечка = инцидент.")
+    elif returncode == 0:
+        print(f"  ✔ Все тесты прошли: {passed} passed")
+    else:
+        print(f"  ⚠ pytest завершился с кодом {returncode} — смотрите вывод выше")
+    if counts.get("xfailed"):
+        print(f"  xfailed {counts['xfailed']} — известный ожидаемый провал (ML-долг:"
+              f" PERSON путает топонимы с ФИО); это НЕ ошибка прогона")
+    if counts.get("xpassed"):
+        print(f"  xpassed {counts['xpassed']} — ожидали провал, но тест прошёл:"
+              f" пометку xfail пора снимать осознанно")
+    if counts.get("skipped"):
+        print(f"  skipped {counts['skipped']} — пропущены (обычно нет модели или"
+              f" тест-сета); проверьте, что пропуск ожидаемый")
+    print("═" * 62 + "\n")
+
+
 def run(key: str) -> int:
-    title, _, args, needs_model = CATEGORIES[key]
+    title, hint, args, needs_model = CATEGORIES[key]
     has_model = model_available()
 
     if needs_model and not has_model:
@@ -148,9 +186,14 @@ def run(key: str) -> int:
     print(f"\n▶ {title}\n")
     env = {**os.environ}
     env.setdefault("ALLOW_NO_PERSON_MODEL", "true")
-    return subprocess.run(
-        [_python(), "-m", "pytest", *args], cwd=ROOT, env=env
-    ).returncode
+    proc = subprocess.run(
+        [_python(), "-m", "pytest", *args], cwd=ROOT, env=env,
+        capture_output=True, text=True,
+    )
+    sys.stdout.write(proc.stdout)
+    sys.stderr.write(proc.stderr)
+    _verdict(title, hint, proc.stdout, proc.returncode)
+    return proc.returncode
 
 
 def menu() -> int:

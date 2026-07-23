@@ -1,3 +1,5 @@
+import os
+
 from pydantic_settings import BaseSettings
 
 
@@ -21,7 +23,10 @@ class Settings(BaseSettings):
     allow_no_person_model: bool = False
 
     class Config:
-        env_file = ".env"
+        # Абсолютный путь к .env в корне проекта: относительный (".env")
+        # резолвится от папки ЗАПУСКА процесса, из-за чего настройки (в т.ч.
+        # PERSON_MODEL_DIR) молча терялись при запуске скриптов не из корня.
+        env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
 
 
 settings = Settings()
