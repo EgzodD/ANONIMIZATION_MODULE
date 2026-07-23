@@ -35,8 +35,8 @@ from collections import Counter, defaultdict
 PROJ = "/media/egzod/01D7DA4662F24750/work/DENIS WORK/MY_PROJECTS/GLOBAL PROJECT/ANONIMIZATION_MODULE(work)"
 sys.path.insert(0, PROJ)
 
-TEST_PATH = os.path.join(PROJ, "data/natasha_training/test/test.jsonl")
-DEFAULT_OUT = os.path.join(PROJ, "data/natasha_training/eval_2x2_results.json")
+TEST_PATH = os.path.join(PROJ, "data/training/test/test.jsonl")
+DEFAULT_OUT = os.path.join(PROJ, "data/training/eval_2x2_results.json")
 
 # Типы ПДн, которые оцениваем
 TYPES = ["PERSON", "PHONE_NUMBER", "EMAIL_ADDRESS", "INN", "SNILS",

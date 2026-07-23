@@ -8,7 +8,7 @@
 в anonymizer) — это и есть смысл метрики на постоянку (разовый 2×2-эксперимент
 своё дело уже сделал, здесь остаётся только защита).
 
-Логика LeakRate повторяет data/natasha_training/eval_2x2.py (value-based, по
+Логика LeakRate повторяет data/training/eval_2x2.py (value-based, по
 оригинальному значению) — она координатно-независима и потому надёжна.
 
 БЕЗОПАСНОСТЬ: в сообщениях об ошибке НЕ печатаются сами значения ПДн (это
@@ -27,7 +27,7 @@ TEST_SET = os.path.join(
     os.path.dirname(__file__),
     "..",
     "data",
-    "natasha_training",
+    "training",
     "test",
     "test.jsonl",
 )
