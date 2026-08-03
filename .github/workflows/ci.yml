@@ -33,10 +33,10 @@ jobs:
         run: ruff check app/ tests/   # блокирующий: код чист (GramLynx исключён, идиомы FastAPI в ignore — см. pyproject.toml)
 
       - name: Безопасность — скан уязвимостей в зависимостях
-        # Пока информационный: обновление зависимостей вынесено в отдельную
-        # задачу с прогоном тестов. После апдейта убрать '|| true' — шаг станет
-        # блокирующим.
-        run: pip-audit -r requirements.txt || true
+        # Блокирующий: на 03.08.2026 requirements.txt чист (pip-audit — 0 уязвимостей
+        # после апдейта fastapi/starlette/dotenv/pytest). Новая уязвимость в пине
+        # завалит CI — это и есть цель.
+        run: pip-audit -r requirements.txt
 
       - name: Тесты (модель-независимый контур) + покрытие
         # Модели PERSON в чекауте нет (114 МБ, models/ в .gitignore), а без неё
