@@ -147,8 +147,15 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
         operators=OPERATORS,
     )
 
+    # Один непересекающийся набор — и для mapping, и для entities_found, и он же
+    # соответствует тексту (presidio разруливает пересечения так же, по score).
+    # Раньше entities_found строился из сырого results, и на одном значении
+    # (12-значный ИНН, попутно похожий на телефон/паспорт) API отдавал несколько
+    # «найденных сущностей», хотя в тексте и mapping — одна.
+    resolved = _resolve_overlaps(results)
+
     mapping = {}
-    for result in _resolve_overlaps(results):
+    for result in resolved:
         if result.entity_type not in EXCLUDED_ENTITIES:
             original_value = text[result.start : result.end]
             op = OPERATORS.get(result.entity_type, OPERATORS["DEFAULT"])
@@ -163,7 +170,7 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
             "score": round(r.score, 2),
             "value": text[r.start : r.end],
         }
-        for r in results
+        for r in sorted(resolved, key=lambda x: x.start)
     ]
 
     return {
