@@ -22,6 +22,15 @@ class Settings(BaseSettings):
     # где модели нет в чекауте. В проде включать нельзя — ФИО будут утекать.
     allow_no_person_model: bool = False
 
+    # Опциональный адаптер обезличивания документов (PDF/Word). По умолчанию
+    # выключен — ядро остаётся лёгким и не тянет python-docx/pdfplumber/pypdfium2.
+    # Включается флагом DOCUMENT_ENABLED=true (см. app/integrations/documents).
+    document_enabled: bool = False
+    # Лимиты защиты от DoS (гигантский файл, zip-bomb в .docx, PDF на тысячи страниц).
+    document_max_bytes: int = 20 * 1024 * 1024   # 20 МБ на файл
+    document_max_pdf_pages: int = 100            # предел страниц PDF
+    document_pdf_dpi: int = 150                  # DPI растеризации PDF
+
     class Config:
         # Абсолютный путь к .env в корне проекта: относительный (".env")
         # резолвится от папки ЗАПУСКА процесса, из-за чего настройки (в т.ч.

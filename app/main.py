@@ -121,6 +121,17 @@ if settings.chatwoot_enabled:
 else:
     logger.info("Интеграция с Chatwoot отключена (CHATWOOT_ENABLED=false) — сервис работает standalone")
 
+# ─── Опциональный адаптер документов (PDF/Word) ────────────────────────────
+# Импорт роутера (а с ним python-docx/pdfplumber/pypdfium2) — только при флаге,
+# чтобы standalone-ядро не тянуло эти библиотеки.
+if settings.document_enabled:
+    from app.integrations.documents.router import router as documents_router
+
+    app.include_router(documents_router)
+    logger.info("Адаптер документов включён (DOCUMENT_ENABLED=true): POST /anonymize/document")
+else:
+    logger.info("Адаптер документов отключён (DOCUMENT_ENABLED=false)")
+
 
 # ─── Эндпоинты ────────────────────────────────────────────────────────────
 
