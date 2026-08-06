@@ -71,17 +71,10 @@ class TestWebhookEndpoint:
         assert data["anonymized_content"] is None
         assert data["total_entities"] == 0
 
-    @pytest.mark.xfail(
-        reason=(
-            "Предсуществующий ML-баг (не связан с рефакторингом Chatwoot-адаптера): "
-            "PERSON-распознаватель иногда поглощает соседнюю LOCATION в один спан "
-            "('Иван Петров из Москвы' -> единый <PERSON>). Тот же корень, что и "
-            "tests/test_anonymizer.py::TestLocationNotHidden::test_city_preserved — "
-            "вне зоны ответственности backend-refactor, требует ML-инженера."
-        ),
-        strict=False,
-    )
     def test_webhook_preserves_location_in_content(self, client):
+        # Ранее xfail: PERSON поглощал соседний топоним ('Иван Петров из Москвы'
+        # -> единый <PERSON>). Исправлено дообучением с негативами (ФИО рядом с
+        # городом) — теперь город остаётся в тексте.
         payload = {
             "event": "message_created",
             "id": 103,

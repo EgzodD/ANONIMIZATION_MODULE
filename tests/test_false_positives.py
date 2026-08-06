@@ -35,9 +35,10 @@ def _load():
         return [json.loads(line) for line in f if line.strip()]
 
 
-@pytest.mark.xfail(reason="модель метит частые слова с заглавной как ФИО + "
-                          "presidio ловит голые числа; чинится дообучением (27.07) "
-                          "и правкой распознавателей", strict=False)
+@pytest.mark.xfail(reason="остаток 5/20 после дообучения (27.07 снизило 7→5): "
+                          "3 — regex presidio на голых числах (телефон/паспорт), "
+                          "лечится распознавателями; 2 — модель ещё цепляет редкие "
+                          "слова с заглавной (Штрихкод/Инвентарный)", strict=False)
 def test_no_false_positives_on_negatives():
     """На предложениях без ПДн не должно быть ни одного плейсхолдера."""
     offenders = []
