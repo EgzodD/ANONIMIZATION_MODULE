@@ -65,6 +65,21 @@ PERSON_MODEL_DIR=/app/models/person_ruBERT
 DATABASE_URL=postgresql://chatwoot:secret123@chatwoot-db:5432/chatwoot_production
 ```
 
+### Режим C. Обезличивание документов (PDF / Word)
+
+Опциональный адаптер: приём файлов `.docx` и `.pdf`. Включается флагом и не зависит
+от Chatwoot — можно комбинировать с любым режимом выше.
+
+```env
+DOCUMENT_ENABLED=true           # по умолчанию false — эндпоинт /anonymize/document выключен
+# Необязательные лимиты (значения по умолчанию):
+DOCUMENT_MAX_BYTES=20971520     # 20 МБ на файл
+DOCUMENT_MAX_PDF_PAGES=100      # предел страниц PDF
+DOCUMENT_PDF_DPI=150            # DPI растеризации PDF
+```
+
+При `DOCUMENT_ENABLED=false` библиотеки для документов не загружаются, ядро остаётся лёгким.
+
 ---
 
 ## 3. Запуск через Docker
@@ -333,6 +348,26 @@ curl -X POST http://localhost:8000/anonymize/batch \
   -d '{"conversation_ids": [1, 2, 3]}'
 ```
 
+### 6.4 Обезличивание документа (PDF / Word)
+
+Требует `DOCUMENT_ENABLED=true`. Принимает файл `.docx` или `.pdf`, возвращает
+обезличенную версию тем же типом (multipart-загрузка).
+
+```bash
+curl -X POST http://localhost:8000/anonymize/document \
+  -F "file=@/path/to/document.docx" \
+  -o anonymized_document.docx
+```
+
+- **Word (.docx):** обезличивается тело, таблицы и колонтитулы; очищаются свойства
+  документа (автор и т.п.). Вёрстка сохраняется.
+- **PDF:** страницы растеризуются, области с ПДн закрашиваются, файл собирается заново
+  — на выходе **нет текстового слоя**, скопировать ПДн из результата нельзя.
+- Сводка о найденном (без значений ПДн) — в заголовке ответа `X-Anonymization-Summary`.
+- `mapping` для документов не возвращается (это ключ де-анонимизации целого файла).
+- Необязательный form-параметр `disable_entities` (список типов через запятую) —
+  как в `/anonymize/text`, только сужение.
+
 ---
 
 ## 7. Вызов из другого сервиса (Python)
@@ -373,6 +408,14 @@ for msg in data["messages"]:
 | Дата рождения | `<DATE_OF_BIRTH>` | 15.03.1990 -> `<DATE_OF_BIRTH>` |
 | Банковская карта | `<CREDIT_CARD>` | 4276 1234 5678 9012 -> `<CREDIT_CARD>` |
 
+### Форматы на входе
+
+| Формат | Эндпоинт | Требует |
+|--------|----------|---------|
+| Произвольный текст | `/anonymize/text` | — |
+| Разговор/пакет из БД (JSON) | `/anonymize/conversation`, `/anonymize/batch` | `CHATWOOT_ENABLED=true` |
+| Word `.docx`, PDF | `/anonymize/document` | `DOCUMENT_ENABLED=true` |
+
 ### Что НЕ анонимизируется
 
 **LOCATION** (города, адреса, улицы) — по требованию проекта остаются в тексте как есть.
@@ -395,7 +438,7 @@ cd source/realization
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m spacy download ru_core_news_sm
+python -m spacy download ru_core_news_lg
 python -m pytest tests/ -v
 ```
 
@@ -413,11 +456,16 @@ realization/
 │   ├── anonymizer.py          # Логика анонимизации (Presidio + кастомные распознаватели)
 │   ├── custom_recognizers.py  # Regex-распознаватели для русских ПДн
 │   └── integrations/
-│       └── chatwoot/          # Опциональный адаптер Chatwoot (за CHATWOOT_ENABLED)
-│           ├── database.py    #   SQLAlchemy-модели + ленивое подключение к БД
-│           ├── schemas.py     #   Pydantic-схемы Chatwoot
-│           ├── service.py     #   Обход conversation → messages → contacts
-│           └── router.py      #   Эндпоинты /anonymize/conversation, /batch, /webhook
+│       ├── chatwoot/          # Опциональный адаптер Chatwoot (за CHATWOOT_ENABLED)
+│       │   ├── database.py    #   SQLAlchemy-модели + ленивое подключение к БД
+│       │   ├── schemas.py     #   Pydantic-схемы Chatwoot
+│       │   ├── service.py     #   Обход conversation → messages → contacts
+│       │   └── router.py      #   Эндпоинты /anonymize/conversation, /batch, /webhook
+│       └── documents/         # Опциональный адаптер документов (за DOCUMENT_ENABLED)
+│           ├── docx_handler.py #   Обезличивание Word (.docx) — тело/таблицы/колонтитулы
+│           ├── pdf_handler.py  #   Обезличивание PDF растеризацией (без AGPL)
+│           ├── metadata.py     #   Очистка метаданных документа
+│           └── router.py       #   Эндпоинт /anonymize/document
 ├── data/
 │   └── ru_training_data.csv   # Датасет для тестирования качества распознавания
 ├── tests/
