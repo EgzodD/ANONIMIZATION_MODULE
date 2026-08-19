@@ -141,18 +141,20 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
             "mapping": {},
         }
 
+    # Один непересекающийся набор — источник истины для ТЕКСТА, mapping и
+    # entities_found. Раньше текст обезличивался по сырому `results` (пересечения
+    # разруливал сам presidio), а mapping/entities_found — по отдельному
+    # `_resolve_overlaps`. На неоднозначных «голых» числах (напр. номер заказа,
+    # где PHONE и PASSPORT дают одинаковый score) победители расходились: в тексте
+    # стоял <PASSPORT>, а в mapping — ключ <PHONE>. Такой плейсхолдер невозможно
+    # деобезличить. Теперь текст строится из того же resolved — рассинхрон исключён.
+    resolved = _resolve_overlaps(results)
+
     anonymized = anonymizer_engine.anonymize(
         text=text,
-        analyzer_results=results,
+        analyzer_results=resolved,
         operators=OPERATORS,
     )
-
-    # Один непересекающийся набор — и для mapping, и для entities_found, и он же
-    # соответствует тексту (presidio разруливает пересечения так же, по score).
-    # Раньше entities_found строился из сырого results, и на одном значении
-    # (12-значный ИНН, попутно похожий на телефон/паспорт) API отдавал несколько
-    # «найденных сущностей», хотя в тексте и mapping — одна.
-    resolved = _resolve_overlaps(results)
 
     mapping = {}
     for result in resolved:
