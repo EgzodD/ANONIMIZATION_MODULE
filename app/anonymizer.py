@@ -141,43 +141,53 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
             "mapping": {},
         }
 
-    # Один непересекающийся набор — источник истины для ТЕКСТА, mapping и
-    # entities_found. Раньше текст обезличивался по сырому `results` (пересечения
-    # разруливал сам presidio), а mapping/entities_found — по отдельному
-    # `_resolve_overlaps`. На неоднозначных «голых» числах (напр. номер заказа,
-    # где PHONE и PASSPORT дают одинаковый score) победители расходились: в тексте
-    # стоял <PASSPORT>, а в mapping — ключ <PHONE>. Такой плейсхолдер невозможно
-    # деобезличить. Теперь текст строится из того же resolved — рассинхрон исключён.
-    resolved = _resolve_overlaps(results)
+    # Единый источник истины для ТЕКСТА, mapping и entities_found — один
+    # непересекающийся набор `resolved`, обходим его слева направо и собираем
+    # всё за один проход. Так исключены две проблемы сразу:
+    #   1) рассинхрон текста и mapping (раньше текст строил presidio по сырому
+    #      `results`, а mapping — по отдельному resolve; на неоднозначных «голых»
+    #      числах в тексте стоял <PASSPORT>, а в mapping ключ был <PHONE>);
+    #   2) схлопывание mapping: несколько значений одного типа (три телефона)
+    #      писались в один ключ <PHONE>, и все, кроме последнего, терялись —
+    #      деобезличить их было нельзя. Теперь повторы нумеруются: первый остаётся
+    #      <PHONE> (обратная совместимость), далее <PHONE_2>, <PHONE_3> …, и текст
+    #      с mapping совпадают ключ-в-ключ.
+    resolved = sorted(_resolve_overlaps(results), key=lambda x: x.start)
 
-    anonymized = anonymizer_engine.anonymize(
-        text=text,
-        analyzer_results=resolved,
-        operators=OPERATORS,
-    )
-
+    parts = []
     mapping = {}
-    for result in resolved:
-        if result.entity_type not in EXCLUDED_ENTITIES:
-            original_value = text[result.start : result.end]
-            op = OPERATORS.get(result.entity_type, OPERATORS["DEFAULT"])
-            placeholder = op.params.get("new_value", f"<{result.entity_type}>")
-            mapping[placeholder] = original_value
+    entities_found = []
+    seen = {}
+    cursor = 0
+    for r in resolved:
+        if r.entity_type in EXCLUDED_ENTITIES:
+            continue
+        op = OPERATORS.get(r.entity_type, OPERATORS["DEFAULT"])
+        base = op.params.get("new_value", f"<{r.entity_type}>")
+        n = seen.get(base, 0) + 1
+        seen[base] = n
+        placeholder = base if n == 1 else f"{base[:-1]}_{n}>"
 
-    entities_found = [
-        {
-            "entity_type": r.entity_type,
-            "start": r.start,
-            "end": r.end,
-            "score": round(r.score, 2),
-            "value": text[r.start : r.end],
-        }
-        for r in sorted(resolved, key=lambda x: x.start)
-    ]
+        parts.append(text[cursor:r.start])
+        parts.append(placeholder)
+        cursor = r.end
+
+        original_value = text[r.start : r.end]
+        mapping[placeholder] = original_value
+        entities_found.append(
+            {
+                "entity_type": r.entity_type,
+                "start": r.start,
+                "end": r.end,
+                "score": round(r.score, 2),
+                "value": original_value,
+            }
+        )
+    parts.append(text[cursor:])
 
     return {
         "original": text,
-        "anonymized": anonymized.text,
+        "anonymized": "".join(parts),
         "entities_found": entities_found,
         "mapping": mapping,
     }

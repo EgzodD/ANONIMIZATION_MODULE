@@ -4,25 +4,102 @@ Presidio по умолчанию не знает русские паттерны
 """
 
 import logging
+import re
 
-from presidio_analyzer import Pattern, PatternRecognizer
+from presidio_analyzer import (
+    EntityRecognizer,
+    Pattern,
+    PatternRecognizer,
+    RecognizerResult,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class KeywordAnchoredRecognizer(EntityRecognizer):
+    """Ищет номер (ИНН/СНИЛС/паспорт), стоящий РЯДОМ с ключевым словом.
+
+    Маскирует только сам номер (группа 1, если она есть — иначе всё совпадение);
+    ключевое слово («ИНН», «СНИЛС», «паспорт») остаётся в тексте. Контрольная
+    сумма НЕ требуется: если рядом написано «ИНН», число почти наверняка ИНН, и
+    пропустить его (утечка ПДн) хуже, чем один раз перемаскировать. Благодаря
+    этому ловятся «грязные» форматы (пробелы, №, дефисы, точки, тире) и тестовые
+    (невалидные по контрольной сумме) номера, которые чистый regex+checksum
+    пропускал.
+
+    allowed_digit_counts — сколько цифр допустимо в номере (например {10, 12}
+    для ИНН, {11} для СНИЛС). Совпадения с другим числом цифр отбрасываются, что
+    отсекает мусор при жадном захвате разделителей.
+    """
+
+    def __init__(self, entity, patterns, allowed_digit_counts=None,
+                 score=0.9, name=None):
+        self._rx = [re.compile(p, re.IGNORECASE) for p in patterns]
+        self._allowed = set(allowed_digit_counts or ())
+        self._score = score
+        self._entity = entity
+        super().__init__(
+            supported_entities=[entity],
+            supported_language="ru",
+            name=name or f"{entity}AnchoredRecognizer",
+        )
+
+    def load(self) -> None:  # нечего загружать
+        pass
+
+    def analyze(self, text, entities, nlp_artifacts=None):
+        if self._entity not in entities:
+            return []
+        out = []
+        for rx in self._rx:
+            for m in rx.finditer(text):
+                grp = 1 if rx.groups else 0
+                start, end = m.span(grp)
+                if self._allowed:
+                    digits = sum(c.isdigit() for c in text[start:end])
+                    if digits not in self._allowed:
+                        continue
+                out.append(
+                    RecognizerResult(
+                        entity_type=self._entity,
+                        start=start,
+                        end=end,
+                        score=self._score,
+                    )
+                )
+        return out
+
+
+# Разделители, встречающиеся ВНУТРИ номера ПДн: пробел, точка, дефис, тире,
+# среднее тире, слэш. НЕ включаем буквы/запятые/№ (кроме отдельных мест) —
+# это границы номера.
+_SEP = r"[\s.\-–—/]"
 
 ru_phone_recognizer = PatternRecognizer(
     supported_entity="PHONE_NUMBER",
     supported_language="ru",
     name="RuPhoneRecognizer",
     patterns=[
+        # (?<!\d) — не начинать матч С СЕРЕДИНЫ длинного числа (иначе «8» внутри
+        # ИНН/паспорта давало частичную маску «7<PHONE>» и утечку первой цифры)
         Pattern(
             name="ru_phone_plus7",
-            regex=r"\+7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}",
+            regex=r"(?<!\d)\+7[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}(?!\d)",
             score=0.9,
         ),
         Pattern(
             name="ru_phone_8",
-            regex=r"8[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}",
+            regex=r"(?<!\d)8[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}(?!\d)",
             score=0.85,
+        ),
+        # Российский мобильный: 7/8 + код оператора 9XX + 7 цифр, любые
+        # разделители. Требование «2-я цифра = 9» отсекает случайные 11-значные
+        # ID (номер заказа 78123456789 — не мобильный), но ловит «79161234567»,
+        # «7-916-123 45 67», «89268804109».
+        Pattern(
+            name="ru_phone_mobile9",
+            regex=r"(?<!\d)[78][\s\-]?9(?:[\s\-]?\d){9}(?!\d)",
+            score=0.6,
         ),
     ],
 )
@@ -138,6 +215,24 @@ ru_email_recognizer = PatternRecognizer(
     ],
 )
 
+# Обфусцированный e-mail: «ivan собака mail точка ru», «user(at)dom[dot]com».
+# Люди так диктуют почту, чтобы обойти маскирование. Ловим «@»-часть (собака/at)
+# + «.»-часть (точка/dot) в любом написании; маскируем всё выражение.
+_AT = r"(?:@|\(\s*at\s*\)|\[\s*at\s*\]|собак[аеу]|\(\s*собак[аеу]\s*\))"
+_DOT = r"(?:\.|\(\s*dot\s*\)|\[\s*dot\s*\]|точк[аеу]|\(\s*точк[аеу]\s*\)|\[\s*точк[аеу]\s*\])"
+ru_obfuscated_email_recognizer = PatternRecognizer(
+    supported_entity="EMAIL_ADDRESS",
+    supported_language="ru",
+    name="RuObfuscatedEmailRecognizer",
+    patterns=[
+        Pattern(
+            name="email_obfuscated",
+            regex=rf"[\w.+\-]+\s*{_AT}\s*[\w\-]+\s*{_DOT}\s*[A-Za-z]{{2,6}}",
+            score=0.85,
+        ),
+    ],
+)
+
 ru_date_of_birth_recognizer = PatternRecognizer(
     supported_entity="DATE_OF_BIRTH",
     supported_language="ru",
@@ -176,11 +271,18 @@ ru_card_number_recognizer = PatternRecognizer(
     patterns=[
         Pattern(
             name="card_16",
-            regex=r"\b\d{4}[\s\-]?\d{4}[\s\-]?\d{4}[\s\-]?\d{4}\b",
+            regex=r"\b\d{4}[\s\-.]?\d{4}[\s\-.]?\d{4}[\s\-.]?\d{4}\b",
             score=0.7,
         ),
+        # 16 цифр с произвольными разделителями, в т.ч. 8 пар и точки:
+        # «52 19 44 70 10 83 65 24», «5469_2103_4812_6137», «5469.2103.4812.6137»
+        Pattern(
+            name="card_16_loose",
+            regex=r"\b\d{2}(?:[\s\-_.]?\d{2}){7}\b",
+            score=0.55,
+        ),
     ],
-    context=["карта", "карты", "номер карты", "банковская"],
+    context=["карта", "карты", "номер карты", "банковская", "мир", "виза"],
 )
 
 
@@ -199,13 +301,86 @@ from app.person_transformer_recognizer import (  # noqa: E402 — намерен
     person_model_available,
 )
 
+# --- Якорные распознаватели: номер РЯДОМ с ключевым словом ---------------------
+# Закрывают утечки «грязных» форматов, которые чистый regex+checksum пропускал:
+#   ИНН 77-0123-456789 / 77 05 31 24 68 90 / 50.1234.567890 / №771298765432
+#   СНИЛС 112-233-445-95 / 14567890123 / 143—721—908 36 / № 165-904-321 88
+#   Паспорт: серия 40 12, номер 583 214 / 45-21 №883 104 / 46 07 № 381924
+# Номер маскируется целиком, ключевое слово остаётся. Контрольная сумма не нужна.
+
+# число из 10/12 цифр с любыми внутренними разделителями (жадно, конец — цифра)
+# Промежуток между ключевым словом и номером: допускает склейку без пробела
+# («ИНН7712…»), обычные разделители и до 2 живых слов (родит. падеж:
+# «ИНН гражданина …», «СНИЛС сотрудника: …»). НЕ используем \b после ключа —
+# в Python re граница буква→цифра не срабатывает, и склейка утекала.
+_GAP = r"(?:\W+\w+){0,2}?[\s:№.\-–—]{0,6}"
+
+_INN_NUM = r"\d[\d\s.\-–—]{6,40}\d"
+ru_inn_anchored = KeywordAnchoredRecognizer(
+    entity="INN",
+    patterns=[
+        rf"ИНН{_GAP}({_INN_NUM})",
+        rf"идентификационн\w*\s+номер\w*{_GAP}({_INN_NUM})",
+    ],
+    allowed_digit_counts={10, 12},
+    score=0.9,
+    name="RuInnAnchoredRecognizer",
+)
+
+_SNILS_NUM = r"\d[\d\s.\-–—]{6,30}\d"
+ru_snils_anchored = KeywordAnchoredRecognizer(
+    entity="SNILS",
+    patterns=[
+        rf"СНИЛС{_GAP}({_SNILS_NUM})",
+        rf"страхов\w*\s+свидетельств\w*{_GAP}({_SNILS_NUM})",
+    ],
+    allowed_digit_counts={11},
+    score=0.9,
+    name="RuSnilsAnchoredRecognizer",
+)
+
+# Паспорт: серия (4 цифры) + номер (6 цифр) в любых форматах.
+_PASS_NUM = r"(?:\d{2}[\s\-/]?\d{2}[\s\-/№.]{0,4}\d{3}[\s\-/]?\d{3}|\d{10})"
+ru_passport_anchored = KeywordAnchoredRecognizer(
+    entity="PASSPORT",
+    patterns=[
+        # «паспорт [РФ] [серия] <номер>» + склейка + до 2 слов между
+        rf"паспорт[а-яё]*(?:\s*рф)?{_GAP}(?:сери[яию]\W{{0,4}})?№?\s*({_PASS_NUM})",
+        # «серия 40 12, номер 583 214» / «серия № 4513, номер № 908172» — маска целиком
+        r"(сери[яию]\W{0,4}№?\s*\d{2}\s?\d{2}\W{0,14}(?:номер|№)\W{0,4}№?\s*\d{3}\s?\d{3})",
+        # обратный порядок: «номер 583214, серия 4012»
+        r"((?:номер|№)\W{0,4}№?\s*\d{3}\s?\d{3}\W{0,14}сери[яию]\W{0,4}№?\s*\d{2}\s?\d{2})",
+    ],
+    allowed_digit_counts={10},
+    score=0.85,
+    name="RuPassportAnchoredRecognizer",
+)
+
+# Дата рождения по якорю: «дата рождения … 17021992» (в т.ч. без разделителей),
+# допускаем до 3 слов между ключом и числом («записана как»).
+ru_dob_anchored = KeywordAnchoredRecognizer(
+    entity="DATE_OF_BIRTH",
+    patterns=[
+        r"дата\s+рожд\w*(?:\W+\w+){0,3}?\W{0,5}"
+        r"(\d{2}[.\-/]?\d{2}[.\-/]?\d{4}|\d{8})",
+    ],
+    allowed_digit_counts={8},
+    score=0.7,
+    name="RuDobAnchoredRecognizer",
+)
+
 ALL_RU_RECOGNIZERS = [
     ru_phone_recognizer,
     ru_inn_recognizer,
+    ru_inn_anchored,
     ru_snils_recognizer,
+    ru_snils_anchored,
     ru_passport_recognizer,
+    ru_passport_anchored,
     ru_email_recognizer,
+    ru_obfuscated_email_recognizer,
     ru_date_of_birth_recognizer,
+    ru_dob_anchored,
     ru_card_number_recognizer,
 ]
 

@@ -40,6 +40,32 @@ def person_model_available() -> bool:
     )
 
 
+def _clean_person_span(text: str, start: int, end: int):
+    """Чистит символьный спан ФИО от модели; возвращает (start, end) или None.
+
+    Токен-классификация на sub-word токенах иногда метит КУСОК слова как PERSON:
+    «ю» в «звоню», «il»/«mi» в «mikhail», «О» в «ФИО», «Банко» в «Банковская».
+    В тексте это рвёт слова («звон<PERSON>») и портит вывод. Отбрасываем такие
+    обрывки по двум признакам:
+      1) после обрезки небуквенных краёв длина < 2 — это одиночный символ;
+      2) спан начинается/кончается ВНУТРИ слова (сосед — буква) — это под-токен,
+         а не имя. Настоящее имя стоит на границе слова.
+    Направление безопасное: имена в чатах — цельные «Фамилия Имя Отчество»
+    (ловятся длинными спанами), а режем именно шум.
+    """
+    while start < end and not text[start].isalpha():
+        start += 1
+    while end > start and not text[end - 1].isalpha():
+        end -= 1
+    if end - start < 2:
+        return None
+    if start > 0 and text[start - 1].isalpha():
+        return None
+    if end < len(text) and text[end].isalpha():
+        return None
+    return start, end
+
+
 class PersonTransformerRecognizer(EntityRecognizer):
     """PERSON на дообученном ruBERT. Возвращает символьные спаны для Presidio."""
 
@@ -106,11 +132,15 @@ class PersonTransformerRecognizer(EntityRecognizer):
             # русские ru-NER (для сравнительных прогонов) — PER/B-PER. Оба -> PERSON.
             tail = group.rsplit("-", 1)[-1].upper()
             if tail in ("PERSON", "PER"):
+                cleaned = _clean_person_span(text, int(ent["start"]), int(ent["end"]))
+                if cleaned is None:
+                    continue
+                start, end = cleaned
                 results.append(
                     RecognizerResult(
                         entity_type="PERSON",
-                        start=int(ent["start"]),
-                        end=int(ent["end"]),
+                        start=start,
+                        end=end,
                         score=float(ent.get("score", self.default_score)),
                     )
                 )
