@@ -75,6 +75,14 @@ class KeywordAnchoredRecognizer(EntityRecognizer):
 # это границы номера.
 _SEP = r"[\s.\-–—/]"
 
+# Промежуток между ключевым словом и номером: допускает склейку без пробела
+# («ИНН7712…»), обычные разделители и до 2 живых слов (родит. падеж:
+# «ИНН гражданина …», «СНИЛС сотрудника: …»). НЕ используем \b после ключа —
+# в Python re граница буква→цифра не срабатывает, и склейка утекала.
+# Слова-связки НЕ пересекают конец предложения (.!?): иначе «нет ИНН. Мой заказ
+# 555…» маскировал бы номер заказа из СЛЕДУЮЩЕГО предложения как ИНН.
+_GAP = r"(?:[^\w.!?\n]+\w+){0,2}?[\s:№.\-–—]{0,6}"
+
 ru_phone_recognizer = PatternRecognizer(
     supported_entity="PHONE_NUMBER",
     supported_language="ru",
@@ -218,8 +226,11 @@ ru_email_recognizer = PatternRecognizer(
 # Обфусцированный e-mail: «ivan собака mail точка ru», «user(at)dom[dot]com».
 # Люди так диктуют почту, чтобы обойти маскирование. Ловим «@»-часть (собака/at)
 # + «.»-часть (точка/dot) в любом написании; маскируем всё выражение.
-_AT = r"(?:@|\(\s*at\s*\)|\[\s*at\s*\]|собак[аеу]|\(\s*собак[аеу]\s*\))"
-_DOT = r"(?:\.|\(\s*dot\s*\)|\[\s*dot\s*\]|точк[аеу]|\(\s*точк[аеу]\s*\)|\[\s*точк[аеу]\s*\])"
+_AT = r"(?:@|\(\s*at\s*\)|\[\s*at\s*\]|\bat\b|собак[аеу]|\(\s*собак[аеу]\s*\))"
+_DOT = r"(?:\.|\(\s*dot\s*\)|\[\s*dot\s*\]|\bdot\b|точк[аеу]|\(\s*точк[аеу]\s*\)|\[\s*точк[аеу]\s*\])"
+# Локальная часть может быть продиктована как 1-3 слова через пробел
+# («ivan petrov собака …»), иначе первое слово утекало.
+_LOCAL = r"[\w.+\-]+(?:\s+[\w.+\-]+){0,2}"
 ru_obfuscated_email_recognizer = PatternRecognizer(
     supported_entity="EMAIL_ADDRESS",
     supported_language="ru",
@@ -227,7 +238,7 @@ ru_obfuscated_email_recognizer = PatternRecognizer(
     patterns=[
         Pattern(
             name="email_obfuscated",
-            regex=rf"[\w.+\-]+\s*{_AT}\s*[\w\-]+\s*{_DOT}\s*[A-Za-z]{{2,6}}",
+            regex=rf"{_LOCAL}\s*{_AT}\s*[\w\-]+\s*{_DOT}\s*[A-Za-z]{{2,6}}",
             score=0.85,
         ),
     ],
@@ -285,16 +296,33 @@ ru_card_number_recognizer = PatternRecognizer(
     context=["карта", "карты", "номер карты", "банковская", "мир", "виза"],
 )
 
+# Карты нестандартной длины (Maestro 13, Amex 15, UnionPay 17-19) рядом с
+# ключевым словом карты — обычные 16-значные паттерны их не ловят.
+ru_card_anchored = KeywordAnchoredRecognizer(
+    entity="CREDIT_CARD",
+    patterns=[
+        rf"(?:карт[а-яё]*|maestro|amex|american\s+express|mastercard|виз[аы]|visa|"
+        rf"unionpay){_GAP}(\d[\d\s\-.]{{10,25}}\d)",
+    ],
+    allowed_digit_counts={12, 13, 14, 15, 16, 17, 18, 19},
+    score=0.8,
+    name="RuCardAnchoredRecognizer",
+)
+
 
 # Распознаватель PERSON — только наш дообученный ruBERT (models/person_ruBERT).
 #
-# Запасного распознавателя здесь намеренно НЕТ. Раньше стоял фолбэк на стоковую
-# Natasha: если модели не было, он подхватывался молча, сервис выглядел исправным
-# (health отвечал ok), но давал утечки ФИО — 0.94% (3 из 318) на тестовом наборе.
-# Отсутствие модели должно быть громким, а не тихим, поэтому:
-#   - модель есть  -> работает ruBERT;
-#   - модели нет   -> PERSON не ищется вообще, а app/main.py отказывается стартовать
-#                     (кроме явного ALLOW_NO_PERSON_MODEL=true для тестов/CI).
+# Отдельного фолбэка на Natasha здесь намеренно НЕТ (раньше он подхватывался
+# молча и давал утечки ФИО — 0.94%). Отсутствие ruBERT должно быть громким:
+#   - модель есть  -> работает ruBERT (авторитетный источник PERSON);
+#   - модели нет   -> app/main.py отказывается стартовать (кроме
+#                     ALLOW_NO_PERSON_MODEL=true для тестов/CI).
+# ВАЖНО: presidio по умолчанию регистрирует встроенный SpacyRecognizer из
+# ru_core_news_lg, и он ТОЖЕ метит PERSON (score 0.85). Это дополнительный
+# (не заменяющий) фолбэк: ruBERT-спаны имеют пол score 0.9 и всегда перебивают
+# spaCy на пересечении (см. person_transformer_recognizer._clean_person_span и
+# пол score), а spaCy лишь добавляет непокрытые ruBERT имена. С ALLOW_NO_PERSON_MODEL
+# spaCy остаётся единственным (слабым) источником PERSON — для теста это приемлемо.
 from app.person_transformer_recognizer import (  # noqa: E402 — намеренно рядом с логикой выбора
     PERSON_MODEL_DIR,
     PersonTransformerRecognizer,
@@ -309,12 +337,6 @@ from app.person_transformer_recognizer import (  # noqa: E402 — намерен
 # Номер маскируется целиком, ключевое слово остаётся. Контрольная сумма не нужна.
 
 # число из 10/12 цифр с любыми внутренними разделителями (жадно, конец — цифра)
-# Промежуток между ключевым словом и номером: допускает склейку без пробела
-# («ИНН7712…»), обычные разделители и до 2 живых слов (родит. падеж:
-# «ИНН гражданина …», «СНИЛС сотрудника: …»). НЕ используем \b после ключа —
-# в Python re граница буква→цифра не срабатывает, и склейка утекала.
-_GAP = r"(?:\W+\w+){0,2}?[\s:№.\-–—]{0,6}"
-
 _INN_NUM = r"\d[\d\s.\-–—]{6,40}\d"
 ru_inn_anchored = KeywordAnchoredRecognizer(
     entity="INN",
@@ -382,6 +404,7 @@ ALL_RU_RECOGNIZERS = [
     ru_date_of_birth_recognizer,
     ru_dob_anchored,
     ru_card_number_recognizer,
+    ru_card_anchored,
 ]
 
 if person_model_available():

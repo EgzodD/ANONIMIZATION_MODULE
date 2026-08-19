@@ -59,9 +59,14 @@ def _clean_person_span(text: str, start: int, end: int):
         end -= 1
     if end - start < 2:
         return None
-    if start > 0 and text[start - 1].isalpha():
-        return None
-    if end < len(text) and text[end].isalpha():
+    # Спан внутри слова (сосед — буква): под-токен вроде «ю»/«il» ИЛИ настоящее
+    # имя, склеенное с соседним словом («спасибоАнна Кузнецова»). Различаем по
+    # длине: короткий (<4) — шум модели, дропаем; длинный — реальное имя, держим
+    # (пусть замаскируется с прилипшим словом — over-masking, но без утечки).
+    mid_word = (start > 0 and text[start - 1].isalpha()) or (
+        end < len(text) and text[end].isalpha()
+    )
+    if mid_word and (end - start) < 4:
         return None
     return start, end
 
@@ -136,12 +141,19 @@ class PersonTransformerRecognizer(EntityRecognizer):
                 if cleaned is None:
                     continue
                 start, end = cleaned
+                # Пол 0.9: presidio по умолчанию регистрирует встроенный
+                # SpacyRecognizer (из ru_core_news_lg), который тоже метит PERSON
+                # со score 0.85. На склейке «звонюИван Петров» spaCy видит узкий
+                # «Петров», а ruBERT — весь спан; при равном/меньшем score побеждал
+                # узкий spaCy-спан и имя «Иван» утекало. Пол гарантирует, что наш
+                # дообученный ruBERT авторитетнее spaCy на любом пересечении.
+                score = max(float(ent.get("score", self.default_score)), 0.9)
                 results.append(
                     RecognizerResult(
                         entity_type="PERSON",
                         start=start,
                         end=end,
-                        score=float(ent.get("score", self.default_score)),
+                        score=score,
                     )
                 )
         return results

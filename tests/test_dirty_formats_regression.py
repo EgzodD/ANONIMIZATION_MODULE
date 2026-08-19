@@ -60,6 +60,14 @@ CASES = [
     ("Телефон 7 с разделителями", "Звоните: 7-916-123 45 67.", ["7-916-123 45 67"]),
     ("E-mail обфусцированный", "Пишите: ivan.petrov собака gmail точка com.",
      ["ivan.petrov", "gmail"]),
+    # --- находки состязательного QA, раунд 2 ---
+    ("E-mail голые at/dot", "Мыло: ivan.petrov at gmail dot com пишите.", ["gmail"]),
+    ("E-mail локальная часть раздельно",
+     "Мыло: ivan petrov собака gmail точка com.", ["ivan petrov", "gmail"]),
+    ("Карта Maestro 13 цифр", "Карта Maestro: 6759649826438 привязана.",
+     ["6759649826438"]),
+    ("Карта Amex 15 цифр", "Карта Amex: 371449635398431 привязана.",
+     ["371449635398431"]),
 ]
 
 # коды/номера, которые ПДн НЕ являются и маскироваться НЕ должны (страж от
@@ -88,3 +96,34 @@ def test_non_pii_not_over_masked(desc, text, keep):
     """Договорные/клиентские коды — не ПДн, должны остаться в тексте."""
     out = anonymize_text(text)["anonymized"]
     assert keep in out, f"[{desc}] не-ПДн код ошибочно замаскирован: {keep}\nвывод: {out}"
+
+
+def test_anchor_does_not_cross_sentence_boundary():
+    """Якорь ИНН/СНИЛС не должен маскировать число из СЛЕДУЮЩЕГО предложения.
+
+    «нет ИНН. Мой заказ 5551234567 …» — число не ИНН; допускается лишь безопасное
+    over-masking низкоприоритетными паттернами (телефон/паспорт 0.4), но НЕ метка
+    INN/SNILS от якоря (score 0.9)."""
+    res = anonymize_text("У меня нет ИНН. Мой заказ 5551234567 висит неделю.")
+    anchored = {"INN", "SNILS"}
+    hit = [e for e in res["entities_found"]
+           if e["entity_type"] in anchored and e["value"].strip() == "5551234567"]
+    assert not hit, f"якорь перепрыгнул границу предложения: {hit}"
+
+
+# --- ФИО, склеенное с соседним словом без пробела (требует модель PERSON) ------
+GLUED_NAME_CASES = [
+    ("звонюИван Петров по делу", ["Иван", "Петров"]),
+    ("спасибоАнна Кузнецова записала заявку", ["Анна", "Кузнецова"]),
+    ("okИгорь Волков на связи", ["Игорь", "Волков"]),
+]
+
+
+@pytest.mark.requires_model
+@pytest.mark.parametrize("text,must_mask", GLUED_NAME_CASES,
+                         ids=[c[0] for c in GLUED_NAME_CASES])
+def test_glued_name_not_leaked(text, must_mask):
+    """Имя, приклеенное к предыдущему слову, не должно утекать (spaCy-коллизия)."""
+    out = anonymize_text(text)["anonymized"]
+    leaked = [v for v in must_mask if v in out]
+    assert not leaked, f"утечка имени при склейке: {leaked}\nвывод: {out}"
