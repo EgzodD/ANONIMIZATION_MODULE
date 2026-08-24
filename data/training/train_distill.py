@@ -163,6 +163,15 @@ def main():
         return {"precision": prec, "recall": rec,
                 "f1": f1_score(true_lab, pred_lab), "f2": f2}
 
+    base_collator = DataCollatorForTokenClassification(tokenizer)
+
+    def weighted_collator(features):
+        """Пэддинг стандартным коллатором + перенос веса примера в батч."""
+        weights = [f.pop("weight") for f in features]
+        batch = base_collator(features)
+        batch["weight"] = torch.tensor(weights, dtype=torch.float)
+        return batch
+
     class WeightedTrainer(Trainer):
         """CE-loss на токен, домноженный на вес примера (gold=1.0, silver=0.3)."""
 
@@ -177,6 +186,8 @@ def main():
             loss = (per_tok * mask * w).sum() / mask.sum().clamp(min=1)
             return (loss, outputs) if return_outputs else loss
 
+    smoke = int(os.environ.get("DISTILL_SMOKE", "0"))  # >0 = быстрый тест пайплайна
+
     train_ds = build([
         (os.path.join(HERE, "train", "train.conll"), 1.0),
         (os.path.join(HERE, "train", "train_negatives.conll"), 1.0),
@@ -186,20 +197,24 @@ def main():
         (os.path.join(HERE, "dev", "dev.conll"), 1.0),
         (os.path.join(HERE, "dev", "dev_negatives.conll"), 1.0),
     ])
+    if smoke:
+        train_ds = train_ds.select(range(min(smoke, len(train_ds))))
+        dev_ds = dev_ds.select(range(min(smoke, len(dev_ds))))
     model = AutoModelForTokenClassification.from_pretrained(
         STUDENT, num_labels=len(LABELS), id2label=I2L, label2id=L2I)
 
     out = os.path.join(HERE, "person_ruBERT_distilled")
     args = TrainingArguments(
-        output_dir=out, num_train_epochs=12,
+        output_dir=out, num_train_epochs=(1 if smoke else 12),
         per_device_train_batch_size=32, per_device_eval_batch_size=64,
         learning_rate=5e-5, eval_strategy="epoch", save_strategy="epoch",
         metric_for_best_model="f2", greater_is_better=True,
         load_best_model_at_end=True, logging_steps=50, seed=2026,
+        remove_unused_columns=False,   # иначе Trainer выкинет наш столбец weight
     )
     trainer = WeightedTrainer(
         model=model, args=args, train_dataset=train_ds, eval_dataset=dev_ds,
-        data_collator=DataCollatorForTokenClassification(tokenizer),
+        data_collator=weighted_collator,
         compute_metrics=compute_metrics,
     )
     trainer.train()

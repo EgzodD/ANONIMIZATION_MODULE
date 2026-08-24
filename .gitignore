@@ -196,3 +196,8 @@ tests/person_ruBERT.zip
 # OS
 .DS_Store
 Thumbs.db
+
+# дистиллированная модель и её архив (веса не коммитим)
+/data/training/person_ruBERT_distilled/
+person_ruBERT_distilled.tar.gz
+/data/training/silver/corpus.conll
