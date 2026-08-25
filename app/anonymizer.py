@@ -27,6 +27,7 @@ OPERATORS = {
     "PASSPORT": OperatorConfig("replace", {"new_value": "<PASSPORT>"}),
     "DATE_OF_BIRTH": OperatorConfig("replace", {"new_value": "<DATE_OF_BIRTH>"}),
     "CREDIT_CARD": OperatorConfig("replace", {"new_value": "<CREDIT_CARD>"}),
+    "ADDRESS": OperatorConfig("replace", {"new_value": "<ADDRESS>"}),
     "DEFAULT": OperatorConfig("replace", {"new_value": "<PII>"}),
 }
 

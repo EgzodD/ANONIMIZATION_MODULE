@@ -100,14 +100,23 @@ class TestCreditCardRecognition:
         assert "<CREDIT_CARD>" in result["anonymized"]
 
 
-class TestLocationNotHidden:
-    def test_location_preserved(self):
-        result = anonymize_text("Я живу в Москве на улице Ленина")
-        assert "Москв" in result["anonymized"]
+class TestAddressPolicy:
+    """Политика: адрес (улица/дом/квартира, с городом) СКРЫВАЕТСЯ; город сам по
+    себе (без улицы) — не адрес и остаётся."""
 
-    def test_city_preserved(self):
-        # Ранее xfail: модель метила 'Санкт-Петербург' как ФИО. Исправлено
-        # дообучением с негативами-топонимами (27.07) — теперь топоним остаётся.
+    def test_full_address_hidden(self):
+        result = anonymize_text("Адрес: г. Москва, ул. Ленина, д. 5, кв. 12")
+        assert "<ADDRESS>" in result["anonymized"]
+        assert "Ленина" not in result["anonymized"]
+
+    def test_address_with_city_hidden(self):
+        result = anonymize_text(
+            "Санкт-Петербург, Невский проспект, дом 18, квартира 47")
+        assert "<ADDRESS>" in result["anonymized"]
+        assert "Невский" not in result["anonymized"]
+
+    def test_bare_city_preserved(self):
+        # Город САМ ПО СЕБЕ (без улицы/дома) — не адрес, не маскируется.
         result = anonymize_text("Офис расположен в Санкт-Петербурге")
         assert "Санкт-Петербург" in result["anonymized"]
 
