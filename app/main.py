@@ -9,10 +9,21 @@ import logging
 
 from fastapi import Depends, FastAPI
 
-from app.anonymizer import EXCLUDED_ENTITIES, analyzer_engine, anonymize_text
+from app.anonymizer import (
+    EXCLUDED_ENTITIES,
+    analyzer_engine,
+    anonymize_text,
+    deanonymize_text,
+)
 from app.auth import require_api_key
 from app.config import settings
-from app.models import AnonymizeTextRequest, AnonymizeTextResponse, HealthResponse
+from app.models import (
+    AnonymizeTextRequest,
+    AnonymizeTextResponse,
+    DeanonymizeRequest,
+    DeanonymizeResponse,
+    HealthResponse,
+)
 from app.person_transformer_recognizer import person_model_available
 
 logger = logging.getLogger(__name__)
@@ -41,6 +52,8 @@ _CORE_DESCRIPTION = (
     "Использует Microsoft Presidio + кастомные распознаватели для русского языка.\n\n"
     "Работает как самостоятельный (standalone) сервис: принимает произвольный текст "
     "и возвращает анонимизированный результат + маппинг для де-анонимизации.\n\n"
+    "Обратная операция — `/deanonymize`: по тексту с плейсхолдерами и `mapping` "
+    "восстанавливает исходные значения (сценарий «безопасная LLM в контуре»).\n\n"
     "**Поддерживаемые типы ПДн:**\n"
     "- PERSON — ФИО\n"
     "- PHONE_NUMBER — номера телефонов (+7, 8)\n"
@@ -196,3 +209,20 @@ def anonymize_free_text(request: AnonymizeTextRequest):
     """
     result = anonymize_text(request.text, disable_entities=request.disable_entities)
     return AnonymizeTextResponse(**result)
+
+
+@app.post(
+    "/deanonymize",
+    response_model=DeanonymizeResponse,
+    tags=["Anonymization"],
+    dependencies=[Depends(require_api_key)],
+)
+def deanonymize(request: DeanonymizeRequest):
+    """Восстановление исходного текста: замена плейсхолдеров на значения из `mapping`.
+
+    Сценарий: анонимизировать текст → отдать версию с `<PERSON>`/`<PHONE>` внешней
+    LLM → восстановить её ответ по `mapping`. `mapping` — ключ деобезличивания,
+    поэтому передаётся вызывающим (сервис его не хранит); значения не логируются.
+    """
+    result = deanonymize_text(request.text, request.mapping)
+    return DeanonymizeResponse(**result)

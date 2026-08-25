@@ -193,6 +193,30 @@ def anonymize_text(text: str, disable_entities=None) -> dict:
     }
 
 
+def deanonymize_text(text: str, mapping: dict) -> dict:
+    """Восстанавливает исходные значения: заменяет плейсхолдеры на значения mapping.
+
+    Сценарий: анонимизировать → отдать текст с <PERSON>/<PHONE> внешней LLM →
+    восстановить её ответ по mapping. Плейсхолдеры у нас уникальны (<PHONE>,
+    <PHONE_2>, …) и значения не содержат «<…>», поэтому обратная замена
+    однозначна. Длинные ключи заменяем первыми — на случай, если один плейсхолдер
+    является префиксом другого.
+
+    mapping — ключ деобезличивания: значения (реальные ПДн) НЕ логируем, только
+    счётчик замен.
+    """
+    if not text or not mapping:
+        return {"deanonymized": text, "replaced": 0}
+    result = text
+    replaced = 0
+    for placeholder in sorted(mapping, key=len, reverse=True):
+        occurrences = result.count(placeholder)
+        if occurrences:
+            result = result.replace(placeholder, mapping[placeholder])
+            replaced += occurrences
+    return {"deanonymized": result, "replaced": replaced}
+
+
 def anonymize_json(data, all_entities: list | None = None, disable_entities=None) -> tuple:
     """Рекурсивно анонимизирует все строковые значения в dict/list (для jsonb-полей)."""
     if all_entities is None:

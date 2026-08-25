@@ -51,6 +51,29 @@ class AnonymizeTextResponse(BaseModel):
     mapping: dict[str, str]
 
 
+class DeanonymizeRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=200_000,
+                      description="Текст с плейсхолдерами (<PERSON>, <PHONE>, ...)")
+    mapping: dict[str, str] = Field(
+        ..., description="Карта плейсхолдер→исходное значение из ответа анонимизации")
+
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "text": "Перезвоните <PERSON> по номеру <PHONE>.",
+                    "mapping": {"<PERSON>": "Иван Петров", "<PHONE>": "+7 999 123 45 67"},
+                }
+            ]
+        }
+    }
+
+
+class DeanonymizeResponse(BaseModel):
+    deanonymized: str
+    replaced: int  # сколько плейсхолдеров восстановлено
+
+
 class HealthResponse(BaseModel):
     status: str
     analyzer_ready: bool
