@@ -8,6 +8,7 @@
 import logging
 
 from fastapi import Depends, FastAPI
+from fastapi.responses import HTMLResponse
 
 from app.anonymizer import (
     EXCLUDED_ENTITIES,
@@ -147,6 +148,15 @@ else:
 
 
 # ─── Эндпоинты ────────────────────────────────────────────────────────────
+
+@app.get("/demo", response_class=HTMLResponse, tags=["System"], include_in_schema=False)
+def demo_page():
+    """Демо-страница для ручной проверки обезличивания (вставь текст → результат
+    с подсветкой → восстановление). Обращается к /anonymize/text и /deanonymize."""
+    from app.demo import DEMO_HTML
+
+    return DEMO_HTML
+
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 def health_check():

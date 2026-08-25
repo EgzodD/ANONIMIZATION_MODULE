@@ -40,6 +40,15 @@ def person_model_available() -> bool:
     )
 
 
+# Слова-метки ПДн и частые существительные, которые модель иногда метит как ФИО
+# (особенно с заглавной в начале предложения). Именами не бывают — не маскируем.
+_PERSON_STOPWORDS = frozenset({
+    "паспорт", "снилс", "инн", "огрн", "кпп", "бик", "телефон", "тел",
+    "адрес", "почта", "email", "карта", "дата", "серия", "номер", "счёт",
+    "счет", "договор", "заказ", "банковская", "мобильный", "электронная",
+})
+
+
 def _clean_person_span(text: str, start: int, end: int):
     """Чистит символьный спан ФИО от модели; возвращает (start, end) или None.
 
@@ -77,6 +86,9 @@ def _clean_person_span(text: str, start: int, end: int):
     if mid_left:
         while start > 0 and text[start - 1].isalpha():
             start -= 1
+    # (4) одиночное слово-метка ПДн («Паспорт», «СНИЛС», «Адрес») — не имя
+    if text[start:end].strip().lower() in _PERSON_STOPWORDS:
+        return None
     return start, end
 
 
