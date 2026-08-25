@@ -4,12 +4,17 @@
 """
 import io
 
-import pdfplumber
 import pytest
 
-from app.integrations.documents.pdf_handler import anonymize_pdf
+# Зависимости PDF-адаптера опциональны (ставятся с requirements документов). Если
+# их нет — эти тесты СКИПАЮТСЯ, а не роняют коллекцию всего набора.
+pdfplumber = pytest.importorskip("pdfplumber")
+pytest.importorskip("pypdfium2")
+pytest.importorskip("PIL")
 
-from .conftest import SAMPLE, build_pdf
+from app.integrations.documents.pdf_handler import anonymize_pdf  # noqa: E402
+
+from .conftest import SAMPLE, build_pdf  # noqa: E402
 
 pytestmark = pytest.mark.integration
 

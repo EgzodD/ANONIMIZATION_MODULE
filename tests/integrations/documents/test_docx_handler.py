@@ -5,11 +5,12 @@
 import io
 
 import pytest
-from docx import Document
 
-from app.integrations.documents.docx_handler import anonymize_docx
+Document = pytest.importorskip("docx").Document  # опц. зависимость — иначе скип
 
-from .conftest import SAMPLE, build_docx, extract_docx_text
+from app.integrations.documents.docx_handler import anonymize_docx  # noqa: E402
+
+from .conftest import SAMPLE, build_docx, extract_docx_text  # noqa: E402
 
 pytestmark = pytest.mark.integration
 

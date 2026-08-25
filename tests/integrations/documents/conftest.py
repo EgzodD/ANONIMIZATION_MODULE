@@ -11,11 +11,14 @@ import importlib
 import io
 
 import pytest
-from docx import Document
-from fastapi.testclient import TestClient
 
-import app.main as app_main_module
-from app.config import settings
+# python-docx — опциональная зависимость адаптера документов. Если её нет, тесты
+# этой папки СКИПАЮТСЯ (importorskip), а не роняют коллекцию всего набора.
+Document = pytest.importorskip("docx").Document
+from fastapi.testclient import TestClient  # noqa: E402
+
+import app.main as app_main_module  # noqa: E402
+from app.config import settings  # noqa: E402
 
 
 @pytest.fixture
