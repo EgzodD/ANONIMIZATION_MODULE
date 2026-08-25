@@ -66,6 +66,13 @@ def _build_analyzer() -> AnalyzerEngine:
         analyzer.registry.add_recognizer(recognizer)
         if hasattr(recognizer, "load"):
             recognizer.load()
+    # Снимаем встроенный presidio PhoneRecognizer: он метит любое правдоподобное
+    # 10+-значное число как телефон (номер заказа/трека/договора → <PHONE>,
+    # перемаскирование). Российские телефоны покрывают наши ru_phone_* паттерны
+    # (+7/8, мобильный 8/7-9XX и голый 9XXXXXXXXX).
+    analyzer.registry.recognizers = [
+        r for r in analyzer.registry.recognizers if r.name != "PhoneRecognizer"
+    ]
     return analyzer
 
 

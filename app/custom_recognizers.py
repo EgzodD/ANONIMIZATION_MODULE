@@ -109,6 +109,10 @@ ru_phone_recognizer = PatternRecognizer(
             regex=r"(?<!\d)[78][\s\-]?9(?:[\s\-]?\d){9}(?!\d)",
             score=0.6,
         ),
+        # голый мобильный без кода страны: 9XXXXXXXXX (10 цифр, начинается на 9).
+        # Заменяет снятый встроенный presidio PhoneRecognizer для этого формата,
+        # но НЕ ловит номера заказа/трека/договора (они не начинаются на 9).
+        Pattern(name="ru_phone_bare_mobile", regex=r"(?<!\d)9\d{9}(?!\d)", score=0.5),
     ],
 )
 
@@ -193,17 +197,17 @@ ru_passport_recognizer = PatternRecognizer(
     supported_language="ru",
     name="RuPassportRecognizer",
     patterns=[
-        Pattern(
-            name="passport_series_number",
-            regex=r"\b\d{2}\s?\d{2}\s?\d{6}\b",
-            score=0.4,
-        ),
+        # «серия … номер …» — есть слово «номер»/№, поэтому не голое число
         Pattern(
             name="passport_series_word_number",
             regex=r"\b\d{4}\s*(?:номер|н[оo]мер|№)\s*\d{6}\b",
             score=0.7,
         ),
     ],
+    # Голый context-free паттерн «\d{2} \d{2} \d{6}» (score 0.4) УБРАН: он метил
+    # любое 10-значное число как паспорт (номер заказа/трека/договора → <PASSPORT>,
+    # ~перемаскирование). Паспорт рядом с ключевым словом покрывает якорный
+    # ru_passport_anchored; отдельно стоящий 10-значный без контекста — не паспорт.
     context=[
         "паспорт", "паспорта", "серия", "номер паспорта", "документ",
         "загранпаспорт", "паспортные данные", "серию", "удостоверение",
