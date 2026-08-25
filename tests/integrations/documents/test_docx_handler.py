@@ -23,6 +23,32 @@ class TestDocxLeaks:
             assert value not in text, f"утечка {name} в .docx"
         assert summary["entities_found"] >= 4
 
+
+class TestDocxTableContext:
+    """Ключ ПДн в одной ячейке строки, значение — в соседней (реальная выгрузка).
+
+    Раньше ячейки обезличивались изолированно, и паспорт без контрольной суммы
+    в соседней ячейке утекал — контекста «Паспорт» рядом не было."""
+
+    def test_row_context_masks_value_in_adjacent_cell(self):
+        doc = Document()
+        table = doc.add_table(rows=0, cols=2)
+        rows = [("Паспорт", "45 08 731902"),   # без контрольной суммы — главный кейс
+                ("СНИЛС", "112-233-445 95"),
+                ("ИНН", "7707083893")]
+        for label, val in rows:
+            c = table.add_row().cells
+            c[0].text = label
+            c[1].text = val
+        buf = io.BytesIO()
+        doc.save(buf)
+
+        out, _ = anonymize_docx(buf.getvalue())
+        text = extract_docx_text(out)
+        for label, val in rows:
+            assert val.replace(" ", "") not in text.replace(" ", ""), \
+                f"утечка {label} из соседней ячейки: {val}"
+
     def test_metadata_author_cleared(self):
         out, _ = anonymize_docx(build_docx(author="Секретный Автор"))
         d = Document(io.BytesIO(out))
