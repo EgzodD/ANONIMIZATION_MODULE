@@ -18,9 +18,19 @@ DISABLE_ENTITIES_DESC = (
 )
 
 
+RETURN_MAPPING_DESC = (
+    "Возвращать ли mapping (ключ деобезличивания: плейсхолдер→исходное значение) "
+    "и исходные значения в entities_found. По умолчанию FALSE — де-анонимизирующие "
+    "данные НЕ выдаются (безопасно). Установите true, только если вам нужен реверс "
+    "(сценарий «LLM в контуре» через /deanonymize). Каждая выдача mapping "
+    "логируется для аудита."
+)
+
+
 class AnonymizeTextRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=50_000, description="Текст для анонимизации")
     disable_entities: list[str] | None = Field(default=None, description=DISABLE_ENTITIES_DESC)
+    return_mapping: bool = Field(default=False, description=RETURN_MAPPING_DESC)
 
     model_config = {
         "json_schema_extra": {
@@ -28,6 +38,7 @@ class AnonymizeTextRequest(BaseModel):
                 {
                     "text": "Меня зовут Иван Петров, мой телефон +7 999 123 45 67, email ivan@mail.ru",
                     "disable_entities": ["DATE_OF_BIRTH"],
+                    "return_mapping": False,
                 }
             ]
         }

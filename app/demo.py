@@ -71,7 +71,7 @@ function highlight(text){
 $('go').onclick = async () => {
   $('err').textContent=''; $('go').disabled=true;
   try{
-    const r = await fetch('/anonymize/text',{method:'POST',headers:headers(),body:JSON.stringify({text:$('inp').value})});
+    const r = await fetch('/anonymize/text',{method:'POST',headers:headers(),body:JSON.stringify({text:$('inp').value,return_mapping:true})});
     if(!r.ok){ throw new Error('HTTP '+r.status+(r.status===401?' — нужен верный X-API-Key':'')); }
     const d = await r.json();
     lastMapping = d.mapping; lastAnon = d.anonymized;

@@ -62,13 +62,25 @@ class TestAnonymizeTextEndpoint:
         data = response.json()
         assert "Москв" in data["anonymized"]
 
-    def test_anonymize_text_returns_mapping(self, client):
+    def test_mapping_gated_by_default(self, client):
+        """Secure by default: mapping и значения ПДн НЕ выдаются без явного запроса."""
         response = client.post(
             "/anonymize/text",
             json={"text": "Телефон: +7 999 123 45 67"},
         )
         data = response.json()
+        assert data["mapping"] == {}
+        assert all(e["value"] == "" for e in data["entities_found"])
+
+    def test_mapping_returned_when_requested(self, client):
+        """С return_mapping=true — ключ деобезличивания и значения выдаются."""
+        response = client.post(
+            "/anonymize/text",
+            json={"text": "Телефон: +7 999 123 45 67", "return_mapping": True},
+        )
+        data = response.json()
         assert len(data["mapping"]) > 0
+        assert any(e["value"] for e in data["entities_found"])
 
     def test_anonymize_text_response_structure(self, client):
         response = client.post(
