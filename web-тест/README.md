@@ -8,11 +8,15 @@
 - **Документы** — загружаешь `.docx` / `.pdf` → скачиваешь обезличенную версию + сводку.
 
 ## Запуск
-Из корня репозитория (модель ФИО подтянется из `.env`):
+Из корня репозитория, **обязательно python из venv** (в системном нет зависимостей:
+transformers, python-multipart и т.д.):
 ```bash
-python web-тест/server.py
+.venv/bin/python web-тест/server.py
 ```
 Открыть в браузере: **http://localhost:8080**
+
+> Если запустить системным `python3` — будут ошибки «No module named 'transformers'»
+> и «requires python-multipart». Нужен именно `.venv/bin/python`.
 
 ## Готовые тестовые файлы
 В папке `тестовые_файлы/`:
