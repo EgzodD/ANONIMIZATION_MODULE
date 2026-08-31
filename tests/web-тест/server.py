@@ -8,7 +8,6 @@
     .venv/bin/python tests/web-тест/server.py
 затем открыть http://localhost:8080 в браузере.
 """
-import io
 import json
 import os
 import sys
