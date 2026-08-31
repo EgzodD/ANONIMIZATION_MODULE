@@ -11,7 +11,7 @@
 Из корня репозитория, **обязательно python из venv** (в системном нет зависимостей:
 transformers, python-multipart и т.д.):
 ```bash
-.venv/bin/python web-тест/server.py
+.venv/bin/python tests/web-тест/server.py
 ```
 Открыть в браузере: **http://localhost:8080**
 
@@ -25,7 +25,7 @@ transformers, python-multipart и т.д.):
 
 Данные в них **синтетические** (вымышленные). Пересоздать:
 ```bash
-python web-тест/сгенерировать_тестовые_файлы.py
+python tests/web-тест/сгенерировать_тестовые_файлы.py
 ```
 
 ## Состав

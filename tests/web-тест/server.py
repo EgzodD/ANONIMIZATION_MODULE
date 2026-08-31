@@ -5,7 +5,7 @@
 в отдельной папке и запускается сам по себе. Auth нет — это локальный тест.
 
 Запуск (из корня репозитория, python ИЗ venv — в системном нет зависимостей):
-    .venv/bin/python web-тест/server.py
+    .venv/bin/python tests/web-тест/server.py
 затем открыть http://localhost:8080 в браузере.
 """
 import io
